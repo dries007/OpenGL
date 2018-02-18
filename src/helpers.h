@@ -14,6 +14,9 @@ extern int vp_w, vp_h;
 int scale_x(int x);
 int scale_y(int y);
 
+int scale_p2w_x(int x);
+int scale_p2w_y(int y);
+
 void error(int status, const char *message);
 
 typedef enum align { ALIGN_LEFT, ALIGN_CENTER, ALIGN_RIGHT } Align;
