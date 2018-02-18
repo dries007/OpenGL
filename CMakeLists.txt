@@ -18,3 +18,6 @@ target_link_libraries(Opg01 m ${OPENGL_LIBRARY} ${GLUT_LIBRARY})
 
 add_executable(Opg02 src/opg02.c src/helpers.c src/data.c src/colors.c)
 target_link_libraries(Opg02 m ${OPENGL_LIBRARY} ${GLUT_LIBRARY})
+
+add_executable(Opg03 src/opg03.c src/helpers.c src/data.c src/colors.c)
+target_link_libraries(Opg03 m ${OPENGL_LIBRARY} ${GLUT_LIBRARY})

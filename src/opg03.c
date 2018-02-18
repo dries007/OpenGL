@@ -27,6 +27,8 @@ int selected = -1;
 bool line = false;
 bool values = false;
 
+enum menu_items { MENU_LINE, MENU_VALUES };
+
 void display()
 {
     glClear(GL_COLOR_BUFFER_BIT);
@@ -143,6 +145,20 @@ void mouse(int button, int state, int x, int y)
     }
 }
 
+void menu(enum menu_items item)
+{
+    switch (item)
+    {
+        case MENU_LINE:
+            line = !line;
+            break;
+        case MENU_VALUES:
+            values = !values;
+            break;
+    }
+    glutPostRedisplay();
+}
+
 int main(int argc, char **argv)
 {
     categories = read_gebruik_dat(data, AANT, &start_week, &end_week);
@@ -184,6 +200,10 @@ int main(int argc, char **argv)
     glutReshapeFunc(reshape);
     glutKeyboardFunc(keyboard);
     glutMouseFunc(mouse);
+    glutCreateMenu(menu);
+    glutAttachMenu(GLUT_RIGHT_BUTTON);
+    glutAddMenuEntry("Values", MENU_VALUES);
+    glutAddMenuEntry("Line", MENU_LINE);
 
     glutMainLoop();
 
