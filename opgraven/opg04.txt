@@ -1,0 +1,5 @@
+Gevraagd, naar analogie met de cursus, teken in 3D een kubus met elk zijvlak
+een ander kleurtje en afhankelijk van het argument dat je aan je programma
+meegeeft (p,o,f) gebruik je gluPerspective,glOrtho of glFrustum.
+Mogelijke uitbreiding: laat de gebruiker via toetsen de coordinaten 
+van de 'camerapositie' inzoemen (x,y,z) of uitzoemen (X,Y,Z).

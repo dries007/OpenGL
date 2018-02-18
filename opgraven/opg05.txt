@@ -1,0 +1,3 @@
+Maak een 3D-zicht met de gegevens van de eerste opgave. Gebruik glTranslate
+om de 'balk' op de juiste plaats te krijgen en glScale om de juiste hoogte
+te verkrijgen.

@@ -1,0 +1,12 @@
+Bouw een 3D-scene met minstens twee bollen met verschillende kleuren.
+Geef uw 3D-scene rechts en links een lichtbron. De lichtbronnen zijn elk van 
+een ander type,de ene is "directional" en de andere "positional".
+Met een druk op een toets doe je een lichtbron aan, met een andere toets terug
+uit.
+Als je een "t" indrukt is de "voorste" bol transparant, met "T" heb je geen
+transparantie.
+Uitbreiding:
+Als je een "s" indrukt bewegen je lichtbronnen mee met je scene, met "S" heb
+je "vaststaande" lichtbronnen.
+Voorzie ook toetsen zodat je je oogpositie kan wijzigen om het effect van
+"vaste" en "bewegende" lichtbronnen te tonen.

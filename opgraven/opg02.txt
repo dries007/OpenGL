@@ -1,0 +1,7 @@
+Het is de bedoeling dat als je van een bepaalde week wilt weten hoeveel
+verschillend tijdsgebruik daarin zitten, je dit met een muisklik kan 
+opvragen. Bijvoorbeeld met de linkermuisknop op een staaf drukken, laat de 
+staaf in verschillende kleuren zien,afhankelijk van het aantal verschillend
+tijdsgebruik. Met de rechtermuisknop krijg je terug het originele. Opgelet, na
+herschaling van je tekening moet je nog steeds met de muis je juiste staaf
+kunnen aanduiden.

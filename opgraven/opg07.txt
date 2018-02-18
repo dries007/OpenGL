@@ -1,0 +1,6 @@
+Bouw een scene met bijvoorbeeld een bol en een kegel en een cilinder
+met behulp van GLUquadricObj.
+Voorzie een paar .jpg bestanden met "mooie" prentjes.
+Met behulp van LoadJPG(<bestandsnaam>) ga je deze dan als textuur 
+gebruiken om op je figuren te kleven. Gebruik een prentje als
+achtergrond dat je bijvoorbeeld vier maal herhaalt.

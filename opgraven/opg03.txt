@@ -1,0 +1,4 @@
+Deze opgave is een vervolg op de vorige. 
+De bedoeling is om nu met een druk op de middenste muisknop als extra een menuutje te 
+laten verschijnen en via dat menuutje dan bijvoorbeeld de y-waarden laten 
+verschijnen en verdwijnen, een 'toplijn' tekenen of niet en stoppen.
