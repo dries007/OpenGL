@@ -5,14 +5,17 @@
 #include "helpers.h"
 
 #define COL_WIDTH 100
-#define MARGIN_L (COL_WIDTH/2)
+#define SPACER (COL_WIDTH/10)
+#define MARGIN_L (COL_WIDTH/2 + 25)
 #define MARGIN_R (COL_WIDTH/2)
-#define MARGIN_T 100
-#define MARGIN_B 10
+#define MARGIN_T 10
+#define MARGIN_B 5
+#define YTICKS 10
 
 /* Required globals for coordinate calculation */
 int wc_left, wc_right, wc_bottom, wc_top;
 int vp_w, vp_h;
+int max_sum;
 
 /* Data globals */
 int start_week, end_week, categories, weeks;
@@ -35,12 +38,15 @@ void display()
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
+    glColor3f(0, 0, 0);
+    
     for (int i = start_week; i <= end_week; i++)
     {
         if (selected == -1) glColor3fv((GLfloat *) &colorsBars[i - start_week]);
         else glColor3fv((GLfloat *) &colorsBarsMuted[i - start_week]);
-        glRecti(COL_WIDTH * i, 0, COL_WIDTH * i + COL_WIDTH, sums[i]);
+        glRecti(COL_WIDTH * i + SPACER, 0, COL_WIDTH * i + COL_WIDTH - SPACER, sums[i]);
         glColor3f(0, 0, 0);
+        display_number(COL_WIDTH * i + COL_WIDTH / 2, -scale_y(15), ALIGN_CENTER, i);
         if (values)
         {
             display_number(COL_WIDTH * i + COL_WIDTH / 2, scale_y(5) + sums[i], ALIGN_CENTER, sums[i]);
@@ -89,6 +95,20 @@ void display()
             "ESC, q, Q: Quit\n"
             "l, L: Toggle line\n"
             "v, V: Toggle values");
+            
+    glColor3f(0, 0, 0);
+    glBegin(GL_LINES);
+    glVertex2i(COL_WIDTH * start_week, 0);
+    glVertex2i(COL_WIDTH * end_week + COL_WIDTH, 0);
+    
+    glVertex2i(COL_WIDTH * start_week, 0);
+    glVertex2i(COL_WIDTH * start_week, max_sum);
+    glEnd();
+    
+    for (int i = 0; i < max_sum; i += YTICKS)
+    {
+    	display_number(COL_WIDTH * start_week - 1, i, ALIGN_RIGHT, i);
+    }
 
     glFlush();
 }
@@ -145,6 +165,7 @@ void mouse(int button, int state, int x, int y)
     }
 }
 
+
 void menu(enum menu_items item)
 {
     switch (item)
@@ -176,7 +197,7 @@ int main(int argc, char **argv)
     if (colorsBarsMuted == NULL) error(1, "Impossibly low on memory.\n");
     color_wheel(colorsBarsMuted, weeks, 1, 0.5, 0);
 
-    int max_sum = sum_uren(data, categories, sums);
+    max_sum = sum_uren(data, categories, sums);
 
     wc_left = COL_WIDTH * start_week - MARGIN_L;
     wc_right = COL_WIDTH * end_week + COL_WIDTH + MARGIN_R;
@@ -192,7 +213,7 @@ int main(int argc, char **argv)
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
     glutInitWindowSize(800, 800);
-    glutCreateWindow("Opgave 1");
+    glutCreateWindow("Opgave 3");
 
     glClearColor(1, 1, 1, 0);
 
@@ -200,6 +221,7 @@ int main(int argc, char **argv)
     glutReshapeFunc(reshape);
     glutKeyboardFunc(keyboard);
     glutMouseFunc(mouse);
+
     glutCreateMenu(menu);
     glutAttachMenu(GLUT_RIGHT_BUTTON);
     glutAddMenuEntry("Values", MENU_VALUES);
