@@ -3,12 +3,20 @@
 
 Colorb colorf2b(Colorf color)
 {
-    return (Colorb){(unsigned char) (color.r * 0xFF), (unsigned char) (color.g * 0xFF), (unsigned char) (color.r * 0xFF)};
+    Colorb c;
+    c.r = (unsigned char) (color.r * 0xFF);
+    c.g = (unsigned char) (color.g * 0xFF);
+    c.b = (unsigned char) (color.r * 0xFF);
+    return c;
 }
 
 Colorf colorb2f(Colorb color)
 {
-    return (Colorf){color.r / 255.0f, color.g / 255.0f, color.r / 255.0f};
+    Colorf c;
+    c.r = color.r / 255.0f;
+    c.g = color.g / 255.0f;
+    c.b = color.b / 255.0f;
+    return c;
 }
 
 /**
