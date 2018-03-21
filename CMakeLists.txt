@@ -27,3 +27,6 @@ target_link_libraries(Opg04 m ${OPENGL_LIBRARY} ${GLUT_LIBRARY})
 
 add_executable(Opg05 oef5/opg05.c oef5/helpers.c oef5/data.c oef5/colors.c)
 target_link_libraries(Opg05 m ${OPENGL_LIBRARY} ${GLUT_LIBRARY})
+
+add_executable(template3D template3D/main.c oef5/colors.c)
+target_link_libraries(template3D m ${OPENGL_LIBRARY} ${GLUT_LIBRARY})
