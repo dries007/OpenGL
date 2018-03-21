@@ -1,10 +1,10 @@
+#include "helpers.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <GL/glut.h>
 #include <math.h>
 #include <stdbool.h>
-
-#include "helpers.h"
 
 int scale_x(int x) { return x * (wc_right - wc_left) / vp_w; }
 int scale_y(int y) { return y * (wc_top - wc_bottom) / vp_h; }
