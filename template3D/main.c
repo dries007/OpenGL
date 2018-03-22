@@ -60,8 +60,8 @@ void keyboard(unsigned char key, int x, int y)
         case 'Z':
             delta *= -1;
         case 'z':
-            camera.eye.x += delta;
-            fprintf(stderr, "Camera eye Z%+d = %lf\n", delta, camera.eye.x);
+            camera.eye.z += delta;
+            fprintf(stderr, "Camera eye Z%+d = %lf\n", delta, camera.eye.z);
             break;
 
         case 'p': case 'P':
@@ -89,6 +89,8 @@ void keyboard(unsigned char key, int x, int y)
             }
             reshape(window.width, window.height);
             break;
+
+        case 'o': case 'O': overlay = !overlay; break;
     }
 
     glutPostRedisplay();
@@ -110,6 +112,8 @@ void special(int key, int x, int y)
 /* Window reshaped callback */
 void reshape(int w, int h)
 {
+    fprintf(stderr, "Reshape, Window size %d;%d\n", w, h);
+
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
 
@@ -146,43 +150,25 @@ void reshape(int w, int h)
 
 void display(void)
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    fprintf(stderr, "Display\n");
 
-    /* Overlay! */
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    gluOrtho2D(0, window.width, 0, window.height);
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-    glPushAttrib(GL_DEPTH_TEST);
-    glDisable(GL_DEPTH_TEST);
-    /* 2D overlay mode, */
-
-    glColor3f(1, 1, 0);
-    display_string(0, window.height - font_line_height, ALIGN_LEFT, "Test Test\nNL");
-    glColor3f(1, 0, 1);
-    display_string(0, window.height - 2 * font_line_height, ALIGN_CENTER, "Test Test\nNL");
-    glColor3f(0, 1, 1);
-    display_string(0, window.height - 3 * font_line_height, ALIGN_RIGHT, "Test Test\nNL");
-
-    glPopAttrib();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    /* Back to normal */
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); /* Nuke everything */
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    /* todo: replace? */
     gluLookAt(camera.eye.x, camera.eye.y, camera.eye.z,
               camera.center.x, camera.center.y, camera.center.z,
               camera.up.x, camera.up.y, camera.up.z);
 
     drawAxis(1000);
+
+    glColor4f(0, 0, 0, 0.5);
+    glRecti(0, 0, 10, 10);
+    glRecti(0, 0, -10, -10);
+    glColor4f(1, 1, 1, 0.5);
+    glRecti(0, 0, 10, -10);
+    glRecti(0, 0, -10, 10);
 
     glColor3f(0, 0, 0);
     glutWireCube(1);
@@ -190,19 +176,51 @@ void display(void)
     glColor3f(1, 1, 1);
     glutWireTeapot(1);
 
-    glFlush();
+    glTranslated(-3, 0, -3);
+    glColor3f(0, 0, 0);
+    glutWireDodecahedron();
+    glColor3f(1, 0, 0);
+    glutSolidDodecahedron();
+
+    if (overlay) /* Draw overlay last, so it's always 'on top' of the scene. */
+    {
+        /* START "context" switch, to overlay mode */
+        glMatrixMode(GL_PROJECTION); /* Change to projection required. */
+        glPushMatrix(); /* Save Projection matrix */
+        glLoadIdentity(); /* Cleanup */
+        gluOrtho2D(0, window.width, 0, window.height); /* Got to 2D view with (0;0) -> (w;h) */
+        glMatrixMode(GL_MODELVIEW); /* Back to drawing stuff */
+        glLoadIdentity(); /* Cleanup */
+        glPushAttrib(GL_DEPTH_TEST); /* Save GL_DEPTH_TEST */
+        glDisable(GL_DEPTH_TEST); /* No depth test for overlay elements */
+        /* END "context" switch, to overlay mode */
+
+        glColor3f(0, 0, 0);
+        disp_printf(0, window.height - font_line_height, ALIGN_LEFT,
+                    "X: %4.2lf Y: %4.2lf Z: %4.2lf",
+                    camera.eye.x, camera.eye.y, camera.eye.z
+        );
+
+        glPopAttrib(); /* Restore GL_DEPTH_TEST */
+        glMatrixMode(GL_PROJECTION); /* Change to projection required. */
+        glPopMatrix(); /* Restore projection matrix */
+    }
+
+    glutSwapBuffers();
 }
 
 int main(int argc, char *argv[])
 {
     glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH );
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_ALPHA);
     glutInitWindowSize(window.width, window.height);
     glutCreateWindow(TITLE);
 
     glClearColor(0.8, 0.8, 0.8, 0.0);
     glClearDepth(1.0);
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glutKeyboardFunc(keyboard);
     glutSpecialFunc(special);
