@@ -1,6 +1,8 @@
 #ifndef OPENGL_HELPERS_H
 #define OPENGL_HELPERS_H
 
+#include <stdbool.h>
+
 /* Types */
 
 typedef struct {
@@ -15,10 +17,16 @@ typedef struct {
     double x, y, z, w;
 } Vect4d;
 
+typedef enum {
+    CAM_TYPE_LOOK_AT, CAM_TYPE_GAME_AZERTY, CAM_TYPE_GAME_QWERTY
+} CameraType;
 typedef struct {
+    CameraType type;
     Vect3d pos;
-    Vect3d center;
-    Vect3d up;
+    union {
+        Vect3d target;
+        struct { double yaw, pitch; };
+    };
 } Camera;
 
 typedef enum {
@@ -55,5 +63,7 @@ Vect3d add3d(Vect3d a, Vect3d b);
 Vect3d norm3d(Vect3d a);
 double dist(Vect3d a);
 Vect3d crossProduct3d(Vect3d a, Vect3d b);
+Vect3d mult3ds(Vect3d a, double s);
+bool handleMove(unsigned char key, int modifiers, int x, int y);
 
 #endif //OPENGL_HELPERS_H

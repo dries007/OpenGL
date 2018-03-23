@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <ctype.h>
-#include <math.h>
 #include <GL/glut.h>
 
 #include "helpers.h"
@@ -16,14 +15,13 @@
  * Todo: Add scroll for zoom (?)
  */
 
-/**
- * GAME_KEYS
- * if 1: use ZQSD to move camera + FC for up/down, AE to rotate, IJKL to move focus + H/N for up/down
- * if 2: Same as 1 for for QWERTY
- */
-#define GAME_KEYS 1
-
 const char *TITLE = "Template 3D Project";
+const char *KEYMAP = "Keymap:\n"
+        "- ESC: Quit\n"
+        "- F1: Toggle overlay\n"
+        "- F2: Change perspective\n"
+        "- F3: Change mode\n"
+;
 
 bool overlay = true;
 
@@ -36,12 +34,7 @@ void display(void);
 /* Keyboard input callback */
 void keyboard(unsigned char key, int x, int y)
 {
-    double delta = 1;
-
     int modifiers = glutGetModifiers();
-    if (modifiers & GLUT_ACTIVE_ALT) delta *= 10.0;
-    if (modifiers & GLUT_ACTIVE_CTRL) delta *= 0.1;
-    if (modifiers & GLUT_ACTIVE_SHIFT) delta *= -1.0;
 
     /* Make ctrl+letter into lowercase letter */
     if (key < 0x20 && modifiers & GLUT_ACTIVE_CTRL) key |= 0x60;
@@ -50,102 +43,12 @@ void keyboard(unsigned char key, int x, int y)
     if (isprint(key)) fprintf(stderr, "Keypress %d (%c), mouse %d;%d\n", key, key, x, y);
     else fprintf(stderr, "Keypress %d (0x%X), mouse %d;%d\n", key, key, x, y);
 
+    if (handleMove(key, modifiers, x, y)) return;
+
     switch (key)
     {
-        case 27: exit(0);
         default: return;
-#if GAME_KEYS
-        case 's':
-            delta *= -1.0;
-        case 'z':
-        {
-            Vect3d norm = norm3d(diff3d(camera.center, camera.pos));
-            camera.pos.x += norm.x * delta;
-            camera.pos.y += norm.y * delta;
-            camera.pos.z += norm.z * delta;
-        }
-            break;
-        case 'q':
-            delta *= -1.0;
-        case 'd':
-        {
-            Vect3d view = norm3d(diff3d(camera.center, camera.pos));
-            Vect3d right = crossProduct3d(view, camera.up);
-            printf("Right: %.2lf %.2lf %.2lf\n", right.x, right.y, right.z);
-//            right = norm3d(right);
-
-            camera.pos.x += right.x * delta;
-            camera.pos.y += right.y * delta;
-            camera.pos.z += right.z * delta;
-        }
-            break;
-        case 'a':
-            break;
-        case 'e':
-            break;
-        case 'c':
-            delta *= -1.0;
-        case 'f':
-            camera.pos.y += delta;
-            break;
-//todo: GAME_KEYS 2
-#else
-        case 'x':
-            camera.pos.x += delta;
-            fprintf(stderr, "Camera pos X%+.1lf = %lf\n", delta, camera.pos.x);
-            break;
-
-        case 'y':
-            camera.pos.y += delta;
-            fprintf(stderr, "Camera pos Y%+.1lf = %lf\n", delta, camera.pos.y);
-            break;
-
-        case 'z':
-            camera.pos.z += delta;
-            fprintf(stderr, "Camera pos Z%+.1lf = %lf\n", delta, camera.pos.z);
-            break;
-
-        case 'u':
-            camera.center.y += delta;
-            fprintf(stderr, "Camera center Y%+.1lf = %lf\n", delta, camera.center.y);
-            break;
-
-        case 'v':
-            camera.center.x += delta;
-            fprintf(stderr, "Camera center X%+.1lf = %lf\n", delta, camera.center.x);
-            break;
-
-        case 'w':
-            camera.center.z += delta;
-            fprintf(stderr, "Camera center Z%+.1lf = %lf\n", delta, camera.center.z);
-            break;
-#endif
-        case 'o': overlay = !overlay; break;
-        case 'p':
-            switch (perspective.type)
-            {
-                case PERSP_TYPE_ORTHO:
-                    fprintf(stderr, "Switching to Frustum projection.\n");
-                    perspective.type = PERSP_TYPE_FRUSTUM;
-                    break;
-                case PERSP_TYPE_FRUSTUM:
-                    fprintf(stderr, "Switching to FOV projection.\n");
-
-                    perspective.type = PERSP_TYPE_FOV;
-                    perspective.fov = 90;
-                    perspective.aspect = (double) window.width / window.height;
-                    break;
-                case PERSP_TYPE_FOV:
-                    fprintf(stderr, "Switching to Ortho projection.\n");
-                    perspective.type = PERSP_TYPE_ORTHO;
-                    perspective.left = -10;
-                    perspective.right = 10;
-                    perspective.bottom = -10;
-                    perspective.top = 10;
-                    break;
-            }
-            reshape(window.width, window.height);
-            break;
+        case 27: exit(0);
     }
 
     glutPostRedisplay();
@@ -159,6 +62,55 @@ void special(int key, int x, int y)
     switch (key)
     {
         default: return;
+
+        case GLUT_KEY_F1:
+            overlay = !overlay;
+            break;
+
+        case GLUT_KEY_F2:
+            switch (perspective.type)
+            {
+                case PERSP_TYPE_ORTHO:
+                    perspective.type = PERSP_TYPE_FRUSTUM;
+                    break;
+
+                case PERSP_TYPE_FRUSTUM:
+                    perspective.type = PERSP_TYPE_FOV;
+                    perspective.fov = 90;
+                    perspective.aspect = (double) window.width / window.height;
+                    break;
+
+                case PERSP_TYPE_FOV:
+                    perspective.type = PERSP_TYPE_ORTHO;
+                    perspective.left = -10;
+                    perspective.right = 10;
+                    perspective.bottom = -10;
+                    perspective.top = 10;
+                    break;
+            }
+            reshape(window.width, window.height);
+            break;
+
+        case GLUT_KEY_F3:
+            switch (camera.type)
+            {
+                case CAM_TYPE_LOOK_AT:
+                    camera.type = CAM_TYPE_GAME_AZERTY;
+                    camera.pitch = 0;
+                    camera.yaw = 0;
+                    break;
+
+                case CAM_TYPE_GAME_AZERTY:
+                    camera.type = CAM_TYPE_GAME_QWERTY;
+                    break;
+
+                case CAM_TYPE_GAME_QWERTY:
+                    camera.type = CAM_TYPE_LOOK_AT;
+                    camera.target = (Vect3d){0, 0, 0};
+                    break;
+            }
+            break;
+
     }
 
     glutPostRedisplay();
@@ -178,23 +130,17 @@ void reshape(int w, int h)
     switch (perspective.type)
     {
         case PERSP_TYPE_ORTHO:
-            fprintf(stderr, "Ortho projection (%lf;%lf;%lf) -> (%lf;%lf;%lf).\n",
-                    perspective.left, perspective.bottom, perspective.near,
-                    perspective.right, perspective.top, perspective.far);
             glOrtho(perspective.left, perspective.right, perspective.bottom, perspective.top,
                     perspective.near, perspective.far);
             break;
+
         case PERSP_TYPE_FRUSTUM:
-            fprintf(stderr, "Frustum projection (%lf;%lf;%lf) -> (%lf;%lf;%lf).\n",
-                    perspective.left, perspective.bottom, perspective.near,
-                    perspective.right, perspective.top, perspective.far);
             glOrtho(perspective.left, perspective.right, perspective.bottom, perspective.top,
                     perspective.near, perspective.far);
             break;
+
         case PERSP_TYPE_FOV:
             perspective.aspect = (double) window.width / window.height;
-            fprintf(stderr, "FOV projection %lf° asp: %lf n: %lf f: %lf\n",
-                    perspective.fov, perspective.aspect, perspective.near, perspective.far);
             gluPerspective(perspective.fov, perspective.aspect,
                            perspective.near, perspective.far);
             break;
@@ -215,9 +161,19 @@ void display(void)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    gluLookAt(camera.pos.x, camera.pos.y, camera.pos.z,
-              camera.center.x, camera.center.y, camera.center.z,
-              camera.up.x, camera.up.y, camera.up.z);
+    switch (camera.type)
+    {
+        case CAM_TYPE_LOOK_AT:
+            gluLookAt(camera.pos.x, camera.pos.y, camera.pos.z, camera.target.x, camera.target.y, camera.target.z, 0, 1, 0);
+            break;
+
+        case CAM_TYPE_GAME_AZERTY:
+        case CAM_TYPE_GAME_QWERTY:
+            glRotated(-camera.pitch, 1, 0, 0);
+            glRotated(camera.yaw, 0, 1, 0);
+            glTranslated(-camera.pos.x, -camera.pos.y, -camera.pos.z);
+            break;
+    }
 
     drawAxis(1000);
     drawCheckersZ(1, 100);
@@ -240,8 +196,6 @@ void display(void)
 
     glPopMatrix();
 
-
-
     if (overlay) /* Draw overlay last, so it's always 'on top' of the scene. */
     {
         /* START "context" switch, to overlay mode */
@@ -256,19 +210,41 @@ void display(void)
         /* END "context" switch, to overlay mode */
 
         glColor3f(0, 0, 0);
-        Vect2i cursor = {0, font_line_height};
-        cursor = disp_printf(cursor, ALIGN_LEFT,
-                    "Eye:    X: %4.2lf Y: %4.2lf Z: %4.2lf\n"
-                    "Center: X: %4.2lf Y: %4.2lf Z: %4.2lf\n"
-                    "Delta:  %4.2lf",
-                    camera.pos.x, camera.pos.y, camera.pos.z,
-                    camera.center.x, camera.center.y, camera.center.z, dist(diff3d(camera.pos, camera.center))
-        );
-        cursor.y += font_line_height;
-        cursor = disp_printf(cursor, ALIGN_LEFT,
-                    "Render distance %4.2lf - %4.2lf",
+
+        Vect2i cursorL = {0, font_line_height};
+        Vect2i cursorR = {window.width, font_line_height};
+
+        cursorL = disp_puts(cursorL, ALIGN_LEFT, KEYMAP);
+
+        cursorR = disp_printf(cursorR, ALIGN_RIGHT, "Camera: X: %4.2lf Y: %4.2lf Z: %4.2lf\n", camera.pos.x, camera.pos.y, camera.pos.z);
+        switch (camera.type)
+        {
+            case CAM_TYPE_LOOK_AT:
+                cursorR = disp_printf(cursorR, ALIGN_RIGHT, "Target: X: %4.2lf Y: %4.2lf Z: %4.2lf\n", camera.target.x, camera.target.y, camera.target.z);
+                break;
+            case CAM_TYPE_GAME_AZERTY:
+            case CAM_TYPE_GAME_QWERTY:
+                cursorR = disp_printf(cursorR, ALIGN_RIGHT, "Yaw: %4.2lf Pitch: %4.2lf\n", camera.yaw, camera.pitch);
+                break;
+        }
+
+        cursorR = disp_printf(cursorR, ALIGN_RIGHT,
+                    "Render distance %4.2lf - %4.2lf\n",
                     perspective.near, perspective.far
         );
+
+        switch (perspective.type)
+        {
+            case PERSP_TYPE_ORTHO: cursorR = disp_puts(cursorR, ALIGN_RIGHT, "Perspective: Ortho\n"); break;
+            case PERSP_TYPE_FRUSTUM: cursorR = disp_puts(cursorR, ALIGN_RIGHT, "Perspective: Frustum\n"); break;
+            case PERSP_TYPE_FOV: cursorR = disp_puts(cursorR, ALIGN_RIGHT, "Perspective: FOV\n"); break;
+        }
+        switch (camera.type)
+        {
+            case CAM_TYPE_LOOK_AT: cursorR = disp_puts(cursorR, ALIGN_RIGHT, "Camera Look-at mode.\n"); break;
+            case CAM_TYPE_GAME_AZERTY: cursorR = disp_puts(cursorR, ALIGN_RIGHT, "Camera AZERTY mode\n"); break;
+            case CAM_TYPE_GAME_QWERTY: cursorR = disp_puts(cursorR, ALIGN_RIGHT, "Camera QWERTY mode\n"); break;
+        }
 
         glPopAttrib(); /* Restore GL_DEPTH_TEST */
         glMatrixMode(GL_PROJECTION); /* Change to projection required. */
@@ -295,6 +271,9 @@ int main(int argc, char *argv[])
     glutSpecialFunc(special);
     glutReshapeFunc(reshape);
     glutDisplayFunc(display);
+
+    puts("Basic OpenGL/GLU/GLUT template program. 2018 - Dries007\n");
+    puts(KEYMAP);
 
     glutMainLoop();
 }
