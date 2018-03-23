@@ -54,5 +54,6 @@ Vect3d diff3d(Vect3d a, Vect3d b);
 Vect3d add3d(Vect3d a, Vect3d b);
 Vect3d norm3d(Vect3d a);
 double dist(Vect3d a);
+Vect3d crossProduct3d(Vect3d a, Vect3d b);
 
 #endif //OPENGL_HELPERS_H

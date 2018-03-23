@@ -98,3 +98,12 @@ double dist(Vect3d a)
 {
     return sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
 }
+
+Vect3d crossProduct3d(Vect3d a, Vect3d b)
+{
+    return (Vect3d) {
+            a.y * b.z - a.z * b.y,
+            a.x * b.z - a.z * b.x,
+            a.x * b.y - a.y * b.x
+    };
+}

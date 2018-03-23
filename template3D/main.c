@@ -21,7 +21,7 @@
  * if 1: use ZQSD to move camera + FC for up/down, AE to rotate, IJKL to move focus + H/N for up/down
  * if 2: Same as 1 for for QWERTY
  */
-#define GAME_KEYS 0
+#define GAME_KEYS 1
 
 const char *TITLE = "Template 3D Project";
 
@@ -59,25 +59,24 @@ void keyboard(unsigned char key, int x, int y)
             delta *= -1.0;
         case 'z':
         {
-            Vect3d norm = norm3d(diff3d(camera.pos, camera.center));
-            camera.pos.x -= norm.x * delta;
-            camera.pos.y -= norm.y * delta;
-            camera.pos.z -= norm.z * delta;
+            Vect3d norm = norm3d(diff3d(camera.center, camera.pos));
+            camera.pos.x += norm.x * delta;
+            camera.pos.y += norm.y * delta;
+            camera.pos.z += norm.z * delta;
         }
             break;
         case 'q':
             delta *= -1.0;
         case 'd':
         {
-            double dx = (camera.center.x - camera.pos.x);
-            double dz = (camera.center.z - camera.pos.z);
-            double dy = (camera.center.y - camera.pos.y);
-// projection mess
-            double d = sqrt(dx*dx+dz*dz+dy*dy);
+            Vect3d view = norm3d(diff3d(camera.center, camera.pos));
+            Vect3d right = crossProduct3d(view, camera.up);
+            printf("Right: %.2lf %.2lf %.2lf\n", right.x, right.y, right.z);
+//            right = norm3d(right);
 
-            camera.pos.x += (-dz / d) * delta;
-//            camera.pos.y += dy/d;
-            camera.pos.z += (dx / d) * delta;
+            camera.pos.x += right.x * delta;
+            camera.pos.y += right.y * delta;
+            camera.pos.z += right.z * delta;
         }
             break;
         case 'a':
