@@ -1,20 +1,27 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <GL/glut.h>
-#include <ctype.h>
 #include <stdbool.h>
+#include <ctype.h>
+#include <math.h>
+#include <GL/glut.h>
 
 #include "helpers.h"
 #include "text.h"
 
 /*
- * Todo: Allow change in camera focus
  * Todo: Add WASD/ZQSD controls for moving camera ('game mode'?)
  * Todo: Allow tilting of the 'up' direction (?)
  * Todo: Add animated model
  * Todo: Mouse stuff (?)
  * Todo: Add scroll for zoom (?)
  */
+
+/**
+ * GAME_KEYS
+ * if 1: use ZQSD to move camera + FC for up/down, AE to rotate, IJKL to move focus + H/N for up/down
+ * if 2: Same as 1 for for QWERTY
+ */
+#define GAME_KEYS 0
 
 const char *TITLE = "Template 3D Project";
 
@@ -29,42 +36,93 @@ void display(void);
 /* Keyboard input callback */
 void keyboard(unsigned char key, int x, int y)
 {
-    if (isgraph(key))
-        fprintf(stderr, "Keypress %d (%c), mouse %d;%d\n", key, key, x, y);
-    else
-        fprintf(stderr, "Keypress %d (0x%X), mouse %d;%d\n", key, key, x, y);
+    double delta = 1;
 
     int modifiers = glutGetModifiers();
-    int delta = 1;
-    if (modifiers & GLUT_ACTIVE_ALT) delta *= 10;
+    if (modifiers & GLUT_ACTIVE_ALT) delta *= 10.0;
+    if (modifiers & GLUT_ACTIVE_CTRL) delta *= 0.1;
+    if (modifiers & GLUT_ACTIVE_SHIFT) delta *= -1.0;
+
+    /* Make ctrl+letter into lowercase letter */
+    if (key < 0x20 && modifiers & GLUT_ACTIVE_CTRL) key |= 0x60;
+    if (isupper(key)) key = tolower(key);
+
+    if (isprint(key)) fprintf(stderr, "Keypress %d (%c), mouse %d;%d\n", key, key, x, y);
+    else fprintf(stderr, "Keypress %d (0x%X), mouse %d;%d\n", key, key, x, y);
 
     switch (key)
     {
         case 27: exit(0);
         default: return;
-
-        case 'Y':
-            delta *= -1;
-        case 'y':
-            camera.eye.y += delta;
-            fprintf(stderr, "Camera eye Y%+d = %lf\n", delta, camera.eye.y);
-            break;
-
-        case 'X':
-            delta *= -1;
-        case 'x':
-            camera.eye.x += delta;
-            fprintf(stderr, "Camera eye X%+d = %lf\n", delta, camera.eye.x);
-            break;
-
-        case 'Z':
-            delta *= -1;
+#if GAME_KEYS
+        case 's':
+            delta *= -1.0;
         case 'z':
-            camera.eye.z += delta;
-            fprintf(stderr, "Camera eye Z%+d = %lf\n", delta, camera.eye.z);
+        {
+            Vect3d norm = norm3d(diff3d(camera.pos, camera.center));
+            camera.pos.x -= norm.x * delta;
+            camera.pos.y -= norm.y * delta;
+            camera.pos.z -= norm.z * delta;
+        }
+            break;
+        case 'q':
+            delta *= -1.0;
+        case 'd':
+        {
+            double dx = (camera.center.x - camera.pos.x);
+            double dz = (camera.center.z - camera.pos.z);
+            double dy = (camera.center.y - camera.pos.y);
+// projection mess
+            double d = sqrt(dx*dx+dz*dz+dy*dy);
+
+            camera.pos.x += (-dz / d) * delta;
+//            camera.pos.y += dy/d;
+            camera.pos.z += (dx / d) * delta;
+        }
+            break;
+        case 'a':
+            break;
+        case 'e':
+            break;
+        case 'c':
+            delta *= -1.0;
+        case 'f':
+            camera.pos.y += delta;
+            break;
+//todo: GAME_KEYS 2
+#else
+        case 'x':
+            camera.pos.x += delta;
+            fprintf(stderr, "Camera pos X%+.1lf = %lf\n", delta, camera.pos.x);
             break;
 
-        case 'p': case 'P':
+        case 'y':
+            camera.pos.y += delta;
+            fprintf(stderr, "Camera pos Y%+.1lf = %lf\n", delta, camera.pos.y);
+            break;
+
+        case 'z':
+            camera.pos.z += delta;
+            fprintf(stderr, "Camera pos Z%+.1lf = %lf\n", delta, camera.pos.z);
+            break;
+
+        case 'u':
+            camera.center.y += delta;
+            fprintf(stderr, "Camera center Y%+.1lf = %lf\n", delta, camera.center.y);
+            break;
+
+        case 'v':
+            camera.center.x += delta;
+            fprintf(stderr, "Camera center X%+.1lf = %lf\n", delta, camera.center.x);
+            break;
+
+        case 'w':
+            camera.center.z += delta;
+            fprintf(stderr, "Camera center Z%+.1lf = %lf\n", delta, camera.center.z);
+            break;
+#endif
+        case 'o': overlay = !overlay; break;
+        case 'p':
             switch (perspective.type)
             {
                 case PERSP_TYPE_ORTHO:
@@ -89,8 +147,6 @@ void keyboard(unsigned char key, int x, int y)
             }
             reshape(window.width, window.height);
             break;
-
-        case 'o': case 'O': overlay = !overlay; break;
     }
 
     glutPostRedisplay();
@@ -157,18 +213,17 @@ void display(void)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    gluLookAt(camera.eye.x, camera.eye.y, camera.eye.z,
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    gluLookAt(camera.pos.x, camera.pos.y, camera.pos.z,
               camera.center.x, camera.center.y, camera.center.z,
               camera.up.x, camera.up.y, camera.up.z);
 
     drawAxis(1000);
+    drawCheckersZ(1, 100);
 
-    glColor4f(0, 0, 0, 0.5);
-    glRecti(0, 0, 10, 10);
-    glRecti(0, 0, -10, -10);
-    glColor4f(1, 1, 1, 0.5);
-    glRecti(0, 0, 10, -10);
-    glRecti(0, 0, -10, 10);
+    glTranslated(0, 0.5, 0);
 
     glColor3f(0, 0, 0);
     glutWireCube(1);
@@ -176,11 +231,17 @@ void display(void)
     glColor3f(1, 1, 1);
     glutWireTeapot(1);
 
+    glPushMatrix();
+
     glTranslated(-3, 0, -3);
     glColor3f(0, 0, 0);
     glutWireDodecahedron();
     glColor3f(1, 0, 0);
     glutSolidDodecahedron();
+
+    glPopMatrix();
+
+
 
     if (overlay) /* Draw overlay last, so it's always 'on top' of the scene. */
     {
@@ -188,7 +249,7 @@ void display(void)
         glMatrixMode(GL_PROJECTION); /* Change to projection required. */
         glPushMatrix(); /* Save Projection matrix */
         glLoadIdentity(); /* Cleanup */
-        gluOrtho2D(0, window.width, 0, window.height); /* Got to 2D view with (0;0) -> (w;h) */
+        gluOrtho2D(0, window.width, window.height, 0); /* Got to 2D view with (0;0) TL -> (w;h) BR */
         glMatrixMode(GL_MODELVIEW); /* Back to drawing stuff */
         glLoadIdentity(); /* Cleanup */
         glPushAttrib(GL_DEPTH_TEST); /* Save GL_DEPTH_TEST */
@@ -196,9 +257,18 @@ void display(void)
         /* END "context" switch, to overlay mode */
 
         glColor3f(0, 0, 0);
-        disp_printf(0, window.height - font_line_height, ALIGN_LEFT,
-                    "X: %4.2lf Y: %4.2lf Z: %4.2lf",
-                    camera.eye.x, camera.eye.y, camera.eye.z
+        Vect2i cursor = {0, font_line_height};
+        cursor = disp_printf(cursor, ALIGN_LEFT,
+                    "Eye:    X: %4.2lf Y: %4.2lf Z: %4.2lf\n"
+                    "Center: X: %4.2lf Y: %4.2lf Z: %4.2lf\n"
+                    "Delta:  %4.2lf",
+                    camera.pos.x, camera.pos.y, camera.pos.z,
+                    camera.center.x, camera.center.y, camera.center.z, dist(diff3d(camera.pos, camera.center))
+        );
+        cursor.y += font_line_height;
+        cursor = disp_printf(cursor, ALIGN_LEFT,
+                    "Render distance %4.2lf - %4.2lf",
+                    perspective.near, perspective.far
         );
 
         glPopAttrib(); /* Restore GL_DEPTH_TEST */

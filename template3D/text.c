@@ -1,22 +1,19 @@
 #include "text.h"
-#include "helpers.h"
 
 #include <stdio.h>
-#include <math.h>
-#include <string.h>
-#include <GL/glut.h>
 #include <stdbool.h>
 #include <stdarg.h>
+#include <GL/glut.h>
 
 
 void* font = GLUT_BITMAP_9_BY_15;
 int font_line_height = 15;
 
-void disp_puts(const int x, const int y, Align mode, const char *string)
+Vect2i disp_puts(Vect2i pos, Align mode, const char *string)
 {
     glPushMatrix();
-    if (string == NULL || string[0] == '\0') return;
-    int xx = x, yy = y; /* tmp coords */
+    if (string == NULL || string[0] == '\0') return pos;
+    int xx = pos.x, yy = pos.y; /* tmp coords */
     int div = 1; /* 1 = right, 2 = center */
     switch (mode)
     {
@@ -28,7 +25,7 @@ void disp_puts(const int x, const int y, Align mode, const char *string)
             {
                 if (*cp == '\n')
                 {
-                    yy -= font_line_height;
+                    yy += font_line_height;
                     glRasterPos2i(xx, yy);
                 }
                 else
@@ -52,7 +49,7 @@ void disp_puts(const int x, const int y, Align mode, const char *string)
                 if (*cp == '\n' || *cp == '\0')
                 {
                     /* Move to center */
-                    xx = x - w / div;
+                    xx = pos.x - w / div;
                     w = 0;
                     glRasterPos2i(xx, yy);
 
@@ -64,7 +61,7 @@ void disp_puts(const int x, const int y, Align mode, const char *string)
                     /* Skip over \n */
                     line = cp + 1;
                     /* Move down */
-                    yy -= font_line_height;
+                    yy += font_line_height;
                 }
                 else
                 {
@@ -75,9 +72,10 @@ void disp_puts(const int x, const int y, Align mode, const char *string)
         }
     }
     glPopMatrix();
+    return (Vect2i) {xx, yy};
 }
 
-void disp_printf(int x, int y, Align mode, const char *format, ...)
+Vect2i disp_printf(Vect2i pos, Align mode, const char *format, ...)
 {
     static char* buffer;
     static int bufferSize;
@@ -95,5 +93,5 @@ void disp_printf(int x, int y, Align mode, const char *format, ...)
     vsprintf(buffer, format, args);
     va_end(args);
 
-    disp_puts(x, y, mode, buffer);
+    return disp_puts(pos, mode, buffer);
 }

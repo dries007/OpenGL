@@ -4,11 +4,19 @@
 /* Types */
 
 typedef struct {
+    int x, y;
+} Vect2i;
+
+typedef struct {
     double x, y, z;
 } Vect3d;
 
 typedef struct {
-    Vect3d eye;
+    double x, y, z, w;
+} Vect4d;
+
+typedef struct {
+    Vect3d pos;
     Vect3d center;
     Vect3d up;
 } Camera;
@@ -40,5 +48,11 @@ extern Window window;
 
 void error(int status, const char *message);
 void drawAxis(double size);
+void drawCheckersZ(double size, int count);
+
+Vect3d diff3d(Vect3d a, Vect3d b);
+Vect3d add3d(Vect3d a, Vect3d b);
+Vect3d norm3d(Vect3d a);
+double dist(Vect3d a);
 
 #endif //OPENGL_HELPERS_H
