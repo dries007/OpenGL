@@ -7,15 +7,9 @@
 /* Sane defaults for globals */
 
 Camera camera = {
-        /*
-        CAM_TYPE_ABSOLUTE,
-        (Vect3d){2.0, 1.0, 1.0},
-        (Vect3d){0.0, 0.0, 0.0},
-        (Vect3d){0.0, 1.0, 0.0}
-         */
         CAM_TYPE_GAME_AZERTY,
-        (Vect3d){10, 1, 0},
-        { -90, 0 }
+        (Vect3d){10, 3, 10},
+        { -45, -3 }
 };
 
 Perspective perspective = {
@@ -25,7 +19,7 @@ Perspective perspective = {
 };
 
 Window window = {
-        600, 600
+        800, 600
 };
 
 /* Helper functions */
@@ -84,6 +78,16 @@ void drawCheckersZ(double size, int count)
     glPopMatrix();
 }
 
+void drawCrosshair(int size)
+{
+    glBegin(GL_LINES);
+    glVertex2i(window.width/2-size, window.height/2);
+    glVertex2i(window.width/2+size, window.height/2);
+    glVertex2i(window.width/2, window.height/2-size);
+    glVertex2i(window.width/2, window.height/2+size);
+    glEnd();
+}
+
 Vect3d diff3d(Vect3d a, Vect3d b)
 {
     return (Vect3d) {a.x - b.x, a.y - b.y, a.z - b.z};
@@ -133,10 +137,8 @@ void moveCamera(double forwards, double strafe, double yaw, double pitch, double
     if (strafe != 0)
     {
         double dz = sin(camera.yaw*M_PI/180.0);
-        /* double dy = 0; */
         double dx = cos(camera.yaw*M_PI/180.0);
         camera.pos.x += dx * strafe;
-        /* camera.pos.y += dy * delta; */
         camera.pos.z += dz * strafe;
     }
     if (yaw != 0)
@@ -157,7 +159,6 @@ void moveCamera(double forwards, double strafe, double yaw, double pitch, double
         camera.pos.y += y;
         camera.pos.z += z;
     }
-
     glutPostRedisplay();
 }
 

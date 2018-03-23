@@ -57,6 +57,7 @@ extern Window window;
 void error(int status, const char *message);
 void drawAxis(double size);
 void drawCheckersZ(double size, int count);
+void drawCrosshair(int size);
 
 Vect3d diff3d(Vect3d a, Vect3d b);
 Vect3d add3d(Vect3d a, Vect3d b);
@@ -64,6 +65,7 @@ Vect3d norm3d(Vect3d a);
 double dist(Vect3d a);
 Vect3d crossProduct3d(Vect3d a, Vect3d b);
 Vect3d mult3ds(Vect3d a, double s);
+
 bool handleMove(unsigned char key, int modifiers, int x, int y);
 void moveCamera(double forwards, double strafe, double yaw, double pitch, double x, double y, double z);
 

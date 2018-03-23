@@ -236,7 +236,7 @@ void motion(int x, int y)
         case CAM_TYPE_GAME_AZERTY:
         case CAM_TYPE_GAME_QWERTY:
             if (mouseLeftDown) moveCamera(0, dx/mouseZoomDiv, 0, 0, 0, dy/mousePanDiv, 0); // Y & strafe
-            if (mouseRightDown) moveCamera(0, 0, dx/mouseRotateDiv, dy/mouseRotateDiv, 0, 0, 0); // yaw & pitch
+            if (mouseRightDown) moveCamera(0, 0, -dx/mouseRotateDiv, dy/mouseRotateDiv, 0, 0, 0); // yaw & pitch
             if (mouseMiddleDown) moveCamera(0, 0, 0, 0, dx/mousePanDiv, 0, dy/mousePanDiv); // pan X Z
             break;
     }
@@ -373,12 +373,7 @@ void display(void)
         }
 
         glColor4f(1, 1, 1, .9);
-        glBegin(GL_LINES);
-            glVertex2i(window.width/2-10, window.height/2);
-            glVertex2i(window.width/2+10, window.height/2);
-            glVertex2i(window.width/2, window.height/2-10);
-            glVertex2i(window.width/2, window.height/2+10);
-        glEnd();
+        drawCrosshair(10);
 
         glPopAttrib(); /* Restore GL_DEPTH_TEST */
         glMatrixMode(GL_PROJECTION); /* Change to projection required. */
@@ -395,7 +390,7 @@ int main(int argc, char *argv[])
     glutInitWindowSize(window.width, window.height);
     glutCreateWindow(TITLE);
 
-    glClearColor(0.8, 0.8, 0.8, 0.0);
+    glClearColor(.7, .7, .7, 0);
     glClearDepth(1.0);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
