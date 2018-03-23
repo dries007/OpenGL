@@ -190,7 +190,7 @@ void reshape(int w, int h)
     glViewport(0, 0, w, h);
 }
 
-
+/* Mouse buttons */
 void mouse(int button, int state, int x, int y)
 {
 //    fprintf(stderr, "Mouse %x %x %d %d\n", button, state, x, y);
@@ -219,6 +219,7 @@ void mouse(int button, int state, int x, int y)
     }
 }
 
+/* Mouse dragging */
 void motion(int x, int y)
 {
 //    fprintf(stderr, "Motion %d %d\n", x, y);
@@ -316,6 +317,17 @@ void display(void)
     glutWireIcosahedron();
     glPopMatrix();
 
+    if (camera.type == CAM_TYPE_ABSOLUTE)
+    {
+        glPushMatrix();
+        glTranslated(camera.target.x, camera.target.y, camera.target.z);
+        glPushAttrib(GL_LINE_BIT);
+        glLineWidth(3);
+        drawAxis(1);
+        glPopAttrib(); /* GL_LINE_WIDTH */
+        glPopMatrix();
+    }
+
     if (overlay) /* Draw overlay last, so it's always 'on top' of the scene. */
     {
         /* START "context" switch, to overlay mode */
@@ -372,8 +384,11 @@ void display(void)
             case CAM_TYPE_GAME_QWERTY: disp_puts(&cursorR, ALIGN_RIGHT, "Camera QWERTY mode\n"); break;
         }
 
-        glColor4f(1, 1, 1, .9);
-        drawCrosshair(10);
+        if (camera.type != CAM_TYPE_ABSOLUTE)
+        {
+            glColor4f(1, 1, 1, .9);
+            drawCrosshair(10);
+        }
 
         glPopAttrib(); /* Restore GL_DEPTH_TEST */
         glMatrixMode(GL_PROJECTION); /* Change to projection required. */

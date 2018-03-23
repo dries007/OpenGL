@@ -8,8 +8,8 @@
 
 Camera camera = {
         CAM_TYPE_GAME_AZERTY,
-        (Vect3d){10, 3, 10},
-        { -45, -3 }
+        (Vect3d){10, 3, 5},
+        { -60, -3 }
 };
 
 Perspective perspective = {
