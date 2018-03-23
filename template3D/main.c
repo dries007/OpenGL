@@ -2,34 +2,78 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <ctype.h>
+#include <math.h>
 #include <GL/glut.h>
 
 #include "helpers.h"
 #include "text.h"
 
 /*
- * Todo: Add WASD/ZQSD controls for moving camera ('game mode'?)
- * Todo: Allow tilting of the 'up' direction (?)
  * Todo: Add animated model
  * Todo: Mouse stuff (?)
  * Todo: Add scroll for zoom (?)
  */
 
 const char *TITLE = "Template 3D Project";
-const char *KEYMAP = "Keymap:\n"
+const char *KEYMAP = "Common keys:\n"
         "- ESC: Quit\n"
         "- F1: Toggle overlay\n"
         "- F2: Change perspective\n"
         "- F3: Change mode\n"
+        "Movement modifiers:\n"
+        "- Shift = x5 or x-1\n"
+        "- Alt = x10\n"
+        "- Ctrl = x0.1\n"
+;
+const char *KEYMAP_ABSOLUTE = "Absolute mode:\n"
+        "- XTY: Move cam\n"
+        "- UVW: Move focus\n"
+;
+const char *KEYMAP_AZERTY = "AZERTY mode:\n"
+        "- ZS: Forward & Back\n"
+        "- QD: Left & Right\n"
+        "- AE: Rotate (Yaw)\n"
+        "- FC: Rotate (Pitch)\n"
+        "- HN: Absolute Y\n"
+        "- IK: Absolute X\n"
+        "- JL: Absolute Z\n"
+;
+const char *KEYMAP_QWERTY = "QWERTY mode:\n"
+        "- WS: Forward & Back\n"
+        "- AD: Left & Right\n"
+        "- QE: Rotate (Yaw)\n"
+        "- FC: Rotate (Pitch)\n"
+        "- HN: Absolute Y\n"
+        "- IK: Absolute X\n"
+        "- JL: Absolute Z\n"
+;
+const char *MOUSE_ABSOLUTE = "Mouse:\n"
+    //todo
+;
+const char *MOUSE_GAME = "Mouse:\n"
+        "- Left: Strafe, Pan Y\n"
+        "- Right: Rotate\n"
+        "- Middle: Pan XZ\n"
+        "- Scroll: Zoom\n"
 ;
 
-bool overlay = true;
+static bool overlay = true;
+static bool mouseLeftDown = false;
+static bool mouseRightDown = false;
+static bool mouseMiddleDown = false;
+static double mouseZoomDiv = 10;
+static double mouseRotateDiv = 2.5;
+static double mousePanDiv = 10;
+static Vect2i prevMouse = {0, 0};
+
 
 /* Callback functions */
 void keyboard(unsigned char key, int x, int y);
 void special(int key, int x, int y);
 void reshape(int w, int h);
 void display(void);
+void mouse(int button, int state, int x, int y);
+void motion(int x, int y);
 
 /* Keyboard input callback */
 void keyboard(unsigned char key, int x, int y)
@@ -40,8 +84,8 @@ void keyboard(unsigned char key, int x, int y)
     if (key < 0x20 && modifiers & GLUT_ACTIVE_CTRL) key |= 0x60;
     if (isupper(key)) key = tolower(key);
 
-    if (isprint(key)) fprintf(stderr, "Keypress %d (%c), mouse %d;%d\n", key, key, x, y);
-    else fprintf(stderr, "Keypress %d (0x%X), mouse %d;%d\n", key, key, x, y);
+//    if (isprint(key)) fprintf(stderr, "Keypress %d (%c), mouse %d;%d\n", key, key, x, y);
+//    else fprintf(stderr, "Keypress %d (0x%X), mouse %d;%d\n", key, key, x, y);
 
     if (handleMove(key, modifiers, x, y)) return;
 
@@ -57,7 +101,7 @@ void keyboard(unsigned char key, int x, int y)
 /* Special (meta kays) keyboard input callback */
 void special(int key, int x, int y)
 {
-    fprintf(stderr, "Special keypress %d, mouse %d;%d\n", key, x, y);
+//    fprintf(stderr, "Special keypress %d, mouse %d;%d\n", key, x, y);
 
     switch (key)
     {
@@ -94,7 +138,7 @@ void special(int key, int x, int y)
         case GLUT_KEY_F3:
             switch (camera.type)
             {
-                case CAM_TYPE_LOOK_AT:
+                case CAM_TYPE_ABSOLUTE:
                     camera.type = CAM_TYPE_GAME_AZERTY;
                     camera.pitch = 0;
                     camera.yaw = 0;
@@ -105,7 +149,7 @@ void special(int key, int x, int y)
                     break;
 
                 case CAM_TYPE_GAME_QWERTY:
-                    camera.type = CAM_TYPE_LOOK_AT;
+                    camera.type = CAM_TYPE_ABSOLUTE;
                     camera.target = (Vect3d){0, 0, 0};
                     break;
             }
@@ -119,7 +163,7 @@ void special(int key, int x, int y)
 /* Window reshaped callback */
 void reshape(int w, int h)
 {
-    fprintf(stderr, "Reshape, Window size %d;%d\n", w, h);
+//    fprintf(stderr, "Reshape, Window size %d;%d\n", w, h);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -130,28 +174,77 @@ void reshape(int w, int h)
     switch (perspective.type)
     {
         case PERSP_TYPE_ORTHO:
-            glOrtho(perspective.left, perspective.right, perspective.bottom, perspective.top,
-                    perspective.near, perspective.far);
+            glOrtho(perspective.left, perspective.right, perspective.bottom, perspective.top, perspective.near, perspective.far);
             break;
 
         case PERSP_TYPE_FRUSTUM:
-            glOrtho(perspective.left, perspective.right, perspective.bottom, perspective.top,
-                    perspective.near, perspective.far);
+            glOrtho(perspective.left, perspective.right, perspective.bottom, perspective.top, perspective.near, perspective.far);
             break;
 
         case PERSP_TYPE_FOV:
             perspective.aspect = (double) window.width / window.height;
-            gluPerspective(perspective.fov, perspective.aspect,
-                           perspective.near, perspective.far);
+            gluPerspective(perspective.fov, perspective.aspect, perspective.near, perspective.far);
             break;
     }
 
     glViewport(0, 0, w, h);
 }
 
+
+void mouse(int button, int state, int x, int y)
+{
+//    fprintf(stderr, "Mouse %x %x %d %d\n", button, state, x, y);
+
+    prevMouse = (Vect2i) {x, y};
+
+    switch (button)
+    {
+        default: return;
+        case GLUT_LEFT_BUTTON: mouseLeftDown = state == GLUT_DOWN; break;
+        case GLUT_RIGHT_BUTTON: mouseRightDown = state == GLUT_DOWN; break;
+        case GLUT_MIDDLE_BUTTON: mouseMiddleDown = state == GLUT_DOWN; break;
+        case 3:
+        case 4:
+            // Scroll wheel
+            switch (camera.type)
+            {
+                case CAM_TYPE_ABSOLUTE:
+                    //todo
+                    break;
+                case CAM_TYPE_GAME_AZERTY:
+                case CAM_TYPE_GAME_QWERTY:
+                    moveCamera(button == 3 ? 1 : -1, 0, 0, 0, 0, 0, 0); // zoom
+                    break;
+            }
+    }
+}
+
+void motion(int x, int y)
+{
+//    fprintf(stderr, "Motion %d %d\n", x, y);
+
+    double dx = prevMouse.x - x;
+    double dy = prevMouse.y - y;
+    prevMouse.x = x;
+    prevMouse.y = y;
+
+    switch (camera.type)
+    {
+        case CAM_TYPE_ABSOLUTE:
+            //todo
+            break;
+        case CAM_TYPE_GAME_AZERTY:
+        case CAM_TYPE_GAME_QWERTY:
+            if (mouseLeftDown) moveCamera(0, dx/mouseZoomDiv, 0, 0, 0, dy/mousePanDiv, 0); // Y & strafe
+            if (mouseRightDown) moveCamera(0, 0, dx/mouseRotateDiv, dy/mouseRotateDiv, 0, 0, 0); // yaw & pitch
+            if (mouseMiddleDown) moveCamera(0, 0, 0, 0, dx/mousePanDiv, 0, dy/mousePanDiv); // pan X Z
+            break;
+    }
+}
+
 void display(void)
 {
-    fprintf(stderr, "Display\n");
+//    fprintf(stderr, "Display\n");
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); /* Nuke everything */
 
@@ -163,7 +256,7 @@ void display(void)
 
     switch (camera.type)
     {
-        case CAM_TYPE_LOOK_AT:
+        case CAM_TYPE_ABSOLUTE:
             gluLookAt(camera.pos.x, camera.pos.y, camera.pos.z, camera.target.x, camera.target.y, camera.target.z, 0, 1, 0);
             break;
 
@@ -178,22 +271,49 @@ void display(void)
     drawAxis(1000);
     drawCheckersZ(1, 100);
 
-    glTranslated(0, 0.5, 0);
-
+    glPushMatrix();
     glColor3f(0, 0, 0);
-    glutWireCube(1);
-    glutSolidTeapot(1);
-    glColor3f(1, 1, 1);
-    glutWireTeapot(1);
+    glutSolidCube(1);
+    glPopMatrix();
 
     glPushMatrix();
-
-    glTranslated(-3, 0, -3);
+    glTranslated(0, 1.8, 0);
+    glColor3f(1, 1, 1);
+    glutSolidTeapot(1);
     glColor3f(0, 0, 0);
-    glutWireDodecahedron();
+    glutWireTeapot(1);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(-5, 1.5, -5);
     glColor3f(1, 0, 0);
     glutSolidDodecahedron();
+    glColor3f(0, 0, 0);
+    glutWireDodecahedron();
+    glPopMatrix();
 
+    glPushMatrix();
+    glTranslated(5, 1.5, -5);
+    glColor3f(0, 1, 0);
+    glutSolidOctahedron();
+    glColor3f(0, 0, 0);
+    glutWireOctahedron();
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(5, 1.5, 5);
+    glColor3f(0, 0, 1);
+    glutSolidTetrahedron();
+    glColor3f(0, 0, 0);
+    glutWireTetrahedron();
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(-5, 1.5, 5);
+    glColor3f(1, 0, 1);
+    glutSolidIcosahedron();
+    glColor3f(0, 0, 0);
+    glutWireIcosahedron();
     glPopMatrix();
 
     if (overlay) /* Draw overlay last, so it's always 'on top' of the scene. */
@@ -211,40 +331,54 @@ void display(void)
 
         glColor3f(0, 0, 0);
 
-        Vect2i cursorL = {0, font_line_height};
-        Vect2i cursorR = {window.width, font_line_height};
+        Vect2i cursorL = {5, font_line_height};
+        Vect2i cursorR = {window.width-5, font_line_height};
 
-        cursorL = disp_puts(cursorL, ALIGN_LEFT, KEYMAP);
+        disp_puts(&cursorL, ALIGN_LEFT, KEYMAP);
 
-        cursorR = disp_printf(cursorR, ALIGN_RIGHT, "Camera: X: %4.2lf Y: %4.2lf Z: %4.2lf\n", camera.pos.x, camera.pos.y, camera.pos.z);
+        disp_printf(&cursorR, ALIGN_RIGHT, "Camera: X: %4.2lf Y: %4.2lf Z: %4.2lf\n", camera.pos.x, camera.pos.y, camera.pos.z);
         switch (camera.type)
         {
-            case CAM_TYPE_LOOK_AT:
-                cursorR = disp_printf(cursorR, ALIGN_RIGHT, "Target: X: %4.2lf Y: %4.2lf Z: %4.2lf\n", camera.target.x, camera.target.y, camera.target.z);
+            case CAM_TYPE_ABSOLUTE:
+                disp_printf(&cursorR, ALIGN_RIGHT, "Target: X: %4.2lf Y: %4.2lf Z: %4.2lf\n", camera.target.x, camera.target.y, camera.target.z);
+                disp_puts(&cursorL, ALIGN_LEFT, KEYMAP_ABSOLUTE);
+                disp_puts(&cursorL, ALIGN_LEFT, MOUSE_ABSOLUTE);
                 break;
             case CAM_TYPE_GAME_AZERTY:
+                disp_printf(&cursorR, ALIGN_RIGHT, "Yaw: %4.2lf Pitch: %4.2lf\n", camera.yaw, camera.pitch);
+                disp_puts(&cursorL, ALIGN_LEFT, KEYMAP_AZERTY);
+                disp_puts(&cursorL, ALIGN_LEFT, MOUSE_GAME);
+                break;
+
             case CAM_TYPE_GAME_QWERTY:
-                cursorR = disp_printf(cursorR, ALIGN_RIGHT, "Yaw: %4.2lf Pitch: %4.2lf\n", camera.yaw, camera.pitch);
+                disp_printf(&cursorR, ALIGN_RIGHT, "Yaw: %4.2lf Pitch: %4.2lf\n", camera.yaw, camera.pitch);
+                disp_puts(&cursorL, ALIGN_LEFT, KEYMAP_QWERTY);
+                disp_puts(&cursorL, ALIGN_LEFT, MOUSE_GAME);
                 break;
         }
 
-        cursorR = disp_printf(cursorR, ALIGN_RIGHT,
-                    "Render distance %4.2lf - %4.2lf\n",
-                    perspective.near, perspective.far
-        );
+        disp_printf(&cursorR, ALIGN_RIGHT, "Render distance %4.2lf - %4.2lf\n", perspective.near, perspective.far);
 
         switch (perspective.type)
         {
-            case PERSP_TYPE_ORTHO: cursorR = disp_puts(cursorR, ALIGN_RIGHT, "Perspective: Ortho\n"); break;
-            case PERSP_TYPE_FRUSTUM: cursorR = disp_puts(cursorR, ALIGN_RIGHT, "Perspective: Frustum\n"); break;
-            case PERSP_TYPE_FOV: cursorR = disp_puts(cursorR, ALIGN_RIGHT, "Perspective: FOV\n"); break;
+            case PERSP_TYPE_ORTHO: disp_puts(&cursorR, ALIGN_RIGHT, "Perspective: Ortho\n"); break;
+            case PERSP_TYPE_FRUSTUM: disp_puts(&cursorR, ALIGN_RIGHT, "Perspective: Frustum\n"); break;
+            case PERSP_TYPE_FOV: disp_puts(&cursorR, ALIGN_RIGHT, "Perspective: FOV\n"); break;
         }
         switch (camera.type)
         {
-            case CAM_TYPE_LOOK_AT: cursorR = disp_puts(cursorR, ALIGN_RIGHT, "Camera Look-at mode.\n"); break;
-            case CAM_TYPE_GAME_AZERTY: cursorR = disp_puts(cursorR, ALIGN_RIGHT, "Camera AZERTY mode\n"); break;
-            case CAM_TYPE_GAME_QWERTY: cursorR = disp_puts(cursorR, ALIGN_RIGHT, "Camera QWERTY mode\n"); break;
+            case CAM_TYPE_ABSOLUTE: disp_puts(&cursorR, ALIGN_RIGHT, "Camera Absolute mode.\n"); break;
+            case CAM_TYPE_GAME_AZERTY: disp_puts(&cursorR, ALIGN_RIGHT, "Camera AZERTY mode\n"); break;
+            case CAM_TYPE_GAME_QWERTY: disp_puts(&cursorR, ALIGN_RIGHT, "Camera QWERTY mode\n"); break;
         }
+
+        glColor4f(1, 1, 1, .9);
+        glBegin(GL_LINES);
+            glVertex2i(window.width/2-10, window.height/2);
+            glVertex2i(window.width/2+10, window.height/2);
+            glVertex2i(window.width/2, window.height/2-10);
+            glVertex2i(window.width/2, window.height/2+10);
+        glEnd();
 
         glPopAttrib(); /* Restore GL_DEPTH_TEST */
         glMatrixMode(GL_PROJECTION); /* Change to projection required. */
@@ -272,8 +406,17 @@ int main(int argc, char *argv[])
     glutReshapeFunc(reshape);
     glutDisplayFunc(display);
 
+    glutMouseFunc(mouse);
+    glutMotionFunc(motion);
+    glutSetCursor(GLUT_CURSOR_INFO);
+
     puts("Basic OpenGL/GLU/GLUT template program. 2018 - Dries007\n");
     puts(KEYMAP);
+    puts(KEYMAP_ABSOLUTE);
+    puts(MOUSE_ABSOLUTE);
+    puts(KEYMAP_AZERTY);
+    puts(KEYMAP_QWERTY);
+    puts(MOUSE_GAME);
 
     glutMainLoop();
 }

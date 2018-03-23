@@ -8,7 +8,7 @@
 
 Camera camera = {
         /*
-        CAM_TYPE_LOOK_AT,
+        CAM_TYPE_ABSOLUTE,
         (Vect3d){2.0, 1.0, 1.0},
         (Vect3d){0.0, 0.0, 0.0},
         (Vect3d){0.0, 1.0, 0.0}
@@ -157,23 +157,25 @@ void moveCamera(double forwards, double strafe, double yaw, double pitch, double
         camera.pos.y += y;
         camera.pos.z += z;
     }
+
+    glutPostRedisplay();
 }
 
 bool handleMove(unsigned char key, int modifiers, int x, int y)
 {
     double delta = 1;
-    if (modifiers & GLUT_ACTIVE_SHIFT) delta *= 5.0;
     if (modifiers & GLUT_ACTIVE_ALT) delta *= 10.0;
     if (modifiers & GLUT_ACTIVE_CTRL) delta *= 0.1;
 
     switch (camera.type)
     {
-        case CAM_TYPE_LOOK_AT:
+        case CAM_TYPE_ABSOLUTE:
+            if (modifiers & GLUT_ACTIVE_SHIFT) delta *= -1.0;
             switch (key)
             {
                 default: return false;
 
-                case 'x':camera.pos.x += delta; break;
+                case 'x': camera.pos.x += delta; break;
                 case 'y': camera.pos.y += delta; break;
                 case 'z': camera.pos.z += delta; break;
 
@@ -181,9 +183,11 @@ bool handleMove(unsigned char key, int modifiers, int x, int y)
                 case 'v': camera.target.x += delta; break;
                 case 'w': camera.target.z += delta; break;
             }
+            glutPostRedisplay();
             break;
 
         case CAM_TYPE_GAME_AZERTY:
+            if (modifiers & GLUT_ACTIVE_SHIFT) delta *= 5.0;
             switch (key)
             {
                 default: return false;
@@ -239,6 +243,5 @@ bool handleMove(unsigned char key, int modifiers, int x, int y)
             break;
     }
 
-    glutPostRedisplay();
     return true;
 }

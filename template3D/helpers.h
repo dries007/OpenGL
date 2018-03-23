@@ -18,7 +18,7 @@ typedef struct {
 } Vect4d;
 
 typedef enum {
-    CAM_TYPE_LOOK_AT, CAM_TYPE_GAME_AZERTY, CAM_TYPE_GAME_QWERTY
+    CAM_TYPE_ABSOLUTE, CAM_TYPE_GAME_AZERTY, CAM_TYPE_GAME_QWERTY
 } CameraType;
 typedef struct {
     CameraType type;
@@ -65,5 +65,6 @@ double dist(Vect3d a);
 Vect3d crossProduct3d(Vect3d a, Vect3d b);
 Vect3d mult3ds(Vect3d a, double s);
 bool handleMove(unsigned char key, int modifiers, int x, int y);
+void moveCamera(double forwards, double strafe, double yaw, double pitch, double x, double y, double z);
 
 #endif //OPENGL_HELPERS_H

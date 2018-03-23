@@ -1,4 +1,5 @@
 #include "text.h"
+#include "helpers.h"
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -9,24 +10,23 @@
 void* font = GLUT_BITMAP_9_BY_15;
 int font_line_height = 15;
 
-Vect2i disp_puts(Vect2i pos, Align mode, const char *string)
+void disp_puts(Vect2i* pos, Align mode, const char *string)
 {
     glPushMatrix();
-    if (string == NULL || string[0] == '\0') return pos;
-    int xx = pos.x, yy = pos.y; /* tmp coords */
+    if (string == NULL || string[0] == '\0') return;
     int div = 1; /* 1 = right, 2 = center */
     switch (mode)
     {
         case ALIGN_LEFT:
         {
             /* Move to starting position, first line */
-            glRasterPos2i(xx, yy);
+            glRasterPos2i(pos->x, pos->y);
             for (const char * cp = string; *cp != '\0'; cp++)
             {
                 if (*cp == '\n')
                 {
-                    yy += font_line_height;
-                    glRasterPos2i(xx, yy);
+                    pos->y += font_line_height;
+                    glRasterPos2i(pos->x, pos->y);
                 }
                 else
                 {
@@ -41,6 +41,7 @@ Vect2i disp_puts(Vect2i pos, Align mode, const char *string)
         }
         case ALIGN_RIGHT:
         {
+            const int x = pos->x;
             int w = 0; /* width */
             const char *cp = string; /* for with */
             const char *line = string; /* for printing */
@@ -49,9 +50,9 @@ Vect2i disp_puts(Vect2i pos, Align mode, const char *string)
                 if (*cp == '\n' || *cp == '\0')
                 {
                     /* Move to center */
-                    xx = pos.x - w / div;
+                    pos->x = x - w / div;
                     w = 0;
-                    glRasterPos2i(xx, yy);
+                    glRasterPos2i(pos->x, pos->y);
 
                     /* Print current line */
                     while (*line != '\n' && *line != '\0') glutBitmapCharacter(font, *line++);
@@ -61,7 +62,7 @@ Vect2i disp_puts(Vect2i pos, Align mode, const char *string)
                     /* Skip over \n */
                     line = cp + 1;
                     /* Move down */
-                    yy += font_line_height;
+                    pos->y += font_line_height;
                 }
                 else
                 {
@@ -72,10 +73,9 @@ Vect2i disp_puts(Vect2i pos, Align mode, const char *string)
         }
     }
     glPopMatrix();
-    return (Vect2i) {xx, yy};
 }
 
-Vect2i disp_printf(Vect2i pos, Align mode, const char *format, ...)
+void disp_printf(Vect2i* pos, Align mode, const char *format, ...)
 {
     static char* buffer;
     static int bufferSize;
