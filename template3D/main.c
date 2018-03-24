@@ -7,12 +7,7 @@
 
 #include "helpers.h"
 #include "text.h"
-
-/*
- * Todo: Add animated model
- * Todo: Mouse stuff (?)
- * Todo: Add scroll for zoom (?)
- */
+#include "stl.h"
 
 const char *TITLE = "Template 3D Project";
 const char *KEYMAP = "Common keys:\n"
@@ -65,6 +60,7 @@ static double mouseZoomDiv = 10;
 static double mouseRotateDiv = 2.5;
 static double mousePanDiv = 10;
 static Vect2i prevMouse = {0, 0};
+static Model* model;
 
 
 /* Callback functions */
@@ -317,6 +313,14 @@ void display(void)
     glutWireIcosahedron();
     glPopMatrix();
 
+    glPushMatrix();
+    glColor3f(0.6, 0, 0);
+    glTranslated(0, 5, 0);
+    glRotated(-90, 1, 0, 0);
+    glScaled(0.1, 0.1, 0.1);
+    stlDisplayModel(model);
+    glPopMatrix();
+
     if (camera.type == CAM_TYPE_ABSOLUTE)
     {
         glPushMatrix();
@@ -427,6 +431,11 @@ int main(int argc, char *argv[])
     puts(KEYMAP_AZERTY);
     puts(KEYMAP_QWERTY);
     puts(MOUSE_GAME);
+
+    model = stlLoadFile("Tesla.stl");
+
+    if (model == NULL) puts("Failed to load model");
+    else puts("Model loaded!");
 
     glutMainLoop();
 }
