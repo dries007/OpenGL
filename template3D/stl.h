@@ -4,17 +4,15 @@
 /* Thank you Wikipedia for explaining how this format works. */
 
 #include <stdbool.h>
-#include <stdint.h>
 
 typedef struct {
     float normal[3];
     float v1[3], v2[3], v3[3];
-    uint16_t unused;
-} __attribute__((packed)) Facet;
+} Facet;
 
 typedef struct {
     char* path;
-    uint32_t nrOfFacets;
+    unsigned int nrOfFacets;
     Facet* facets;
 } Model;
 
