@@ -1,0 +1,164 @@
+// Het interessant deel
+// snip
+
+static bool lightRel = false;
+static bool light1 = false;
+static bool light2 = false;
+static bool light3 = false;
+static bool blend = false;
+
+// Kleuren uit voorbeeld
+GLfloat grijs[]       = {0.7,0.7,0.7,1.0};
+GLfloat wit[]       = {1.0,1.0,1.0,1.0};
+GLfloat zwart[]     = {0.0,0.0,0.0,1.0};
+GLfloat rood[]      = {1.0,0.0,0.0,1.0};
+GLfloat roodblauw[]      = {1.0,0.0,1.0,1.0};
+GLfloat groen[]     = {0.0,1.0,0.0,1.0};
+GLfloat grblauw[]     = {0.0, 0.8, 1.0, 1.0};
+GLfloat direc[]     = {0.0, -1.0, 0.0};
+
+Vect4f  posLight0 = {10.0, 5.0, 0.0, 1.0};
+Vect4f  posLight1 = {1.0, 1.0, 0.0, 1.0};
+Vect4f  posLight2 = {0.0, 4.0, 10.0, 1.0};
+
+// in keyboard: toggle lightRel, light1,2,3, blend
+
+void display(void)
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_LIGHTING);
+    
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glShadeModel(flat ? GL_FLAT : GL_SMOOTH);
+
+	if (lightRel)
+	{
+	    glLightfv(GL_LIGHT0, GL_POSITION, (float*) &posLight0);
+	    glLightfv(GL_LIGHT1, GL_POSITION, (float*) &posLight1);
+	    glLightfv(GL_LIGHT2, GL_POSITION, (float*) &posLight2);
+    }
+
+
+    switch (camera.type)
+    {
+        case CAM_TYPE_ABSOLUTE:
+            gluLookAt(camera.pos.x, camera.pos.y, camera.pos.z, 
+                      camera.target.x, camera.target.y, camera.target.z, 0, 1, 0);
+            break;
+
+        case CAM_TYPE_GAME_AZERTY:
+        case CAM_TYPE_GAME_QWERTY:
+            glRotated(-camera.pitch, 1, 0, 0);
+            glRotated(camera.yaw, 0, 1, 0);
+            glTranslated(-camera.pos.x, -camera.pos.y, -camera.pos.z);
+            break;
+    }
+
+    drawAxis(100);
+    drawCheckersZ(1, 10);
+    
+    if (!lightRel) 
+    {
+	    glLightfv(GL_LIGHT0, GL_POSITION, (float*) &posLight0);
+	    glLightfv(GL_LIGHT1, GL_POSITION, (float*) &posLight1);
+	    glLightfv(GL_LIGHT2, GL_POSITION, (float*) &posLight2);
+    }
+	
+    glEnable(GL_LIGHTING);
+    if (light1) glEnable(GL_LIGHT0);
+    else glDisable(GL_LIGHT0);
+       
+    if (light2) glEnable(GL_LIGHT1);
+    else glDisable(GL_LIGHT1);
+
+    if (light3) glEnable(GL_LIGHT2);
+    else glDisable(GL_LIGHT2);
+    
+	Vect4f material = {1, 1, 1, 1};
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, (float*)&material);
+
+	if (blend) glEnable(GL_BLEND);
+
+    // GRBA
+    material.x = 0; material.y = 0; material.z = 1; material.w = 0.5; 
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, (float*)&material);
+    material.x = 1; material.y = 1; material.z = 0; material.w = 0.3;
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, (float*)&material);
+    glPushMatrix();
+    glTranslated(0, 10, 0);
+    glutSolidSphere(1, 10, 10);
+    glPopMatrix();
+    
+    material.x = 0; material.y = 1; material.z = 0; material.w = 0.7;
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, (float*)&material);
+    glPushMatrix();
+    glTranslated(-5, 5, -5);
+    glutSolidSphere(1, 10, 10);
+    glPopMatrix();
+    
+    material.x = 1; material.y = 1; material.z = 1; material.w = 0.5;
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, (float*)&material);
+    glPushMatrix();
+    glTranslated(-5, 5, 5);
+    glutSolidSphere(1, 10, 10);
+    glPopMatrix();
+    
+    //  transparante bollen, 2 niet.
+    glDisable(GL_BLEND);
+    
+    material.x = 1; material.y = 0; material.z = 0; material.w = 0.5;
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, (float*)&material);
+    glPushMatrix();
+    glTranslated(5, 5, -5);
+    glutSolidSphere(1, 10, 10);
+    glPopMatrix();
+    
+    material.x = 0; material.y = 0; material.z = 0; material.w = 0.2;
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, (float*)&material);
+    glPushMatrix();
+    glTranslated(5, 5, 5);
+    glutSolidSphere(1, 10, 10);
+    glPopMatrix();
+	
+    glutSwapBuffers();
+}
+
+
+int main(int argc, char *argv[])
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_ALPHA);
+    glutInitWindowSize(window.width, window.height);
+    glutCreateWindow(TITLE);
+
+    glClearColor(0.1, 0.1, 0.1, 0);
+    glClearDepth(1.0);
+    glEnable(GL_DEPTH_TEST);
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, zwart);
+	glLightfv(GL_LIGHT0,GL_AMBIENT,zwart);
+	glLightfv(GL_LIGHT1,GL_AMBIENT,zwart);
+	glLightfv(GL_LIGHT2,GL_AMBIENT,zwart);
+	glLightfv(GL_LIGHT0,GL_DIFFUSE,zwart);
+	glLightfv(GL_LIGHT1,GL_DIFFUSE,zwart);
+	glLightfv(GL_LIGHT2,GL_DIFFUSE,zwart);
+	glLightfv(GL_LIGHT0,GL_SPECULAR,zwart);
+	glLightfv(GL_LIGHT1,GL_SPECULAR,zwart);
+	glLightfv(GL_LIGHT2,GL_SPECULAR,zwart);
+	glMaterialf(GL_FRONT,GL_SHININESS,127.0); 
+	glLightfv(GL_LIGHT0,GL_DIFFUSE,rood);
+	glLightfv(GL_LIGHT1,GL_DIFFUSE,wit);
+	glLightfv(GL_LIGHT2,GL_AMBIENT,groen);
+
+	//snip
+
+    glutMainLoop();
+}
+

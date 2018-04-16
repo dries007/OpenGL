@@ -14,8 +14,16 @@ typedef struct {
 } Vect3d;
 
 typedef struct {
+    float x, y, z;
+} Vect3f;
+
+typedef struct {
     double x, y, z, w;
 } Vect4d;
+
+typedef struct {
+    float x, y, z, w;
+} Vect4f;
 
 typedef enum {
     CAM_TYPE_ABSOLUTE, CAM_TYPE_GAME_AZERTY, CAM_TYPE_GAME_QWERTY

@@ -7,7 +7,7 @@
 /* Sane defaults for globals */
 
 Camera camera = {
-        CAM_TYPE_GAME_AZERTY,
+        CAM_TYPE_GAME_QWERTY,
         10, 3, 5,
         {0.0, 0.0, 0.0},
         -60, -3

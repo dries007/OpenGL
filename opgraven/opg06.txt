@@ -5,6 +5,10 @@ Met een druk op een toets doe je een lichtbron aan, met een andere toets terug
 uit.
 Als je een "t" indrukt is de "voorste" bol transparant, met "T" heb je geen
 transparantie.
+
+
+
+
 Uitbreiding:
 Als je een "s" indrukt bewegen je lichtbronnen mee met je scene, met "S" heb
 je "vaststaande" lichtbronnen.
