@@ -28,8 +28,14 @@ target_link_libraries(Opg04 m ${OPENGL_LIBRARY} ${GLUT_LIBRARY})
 add_executable(Opg05 oef5/opg05.c oef5/helpers.c oef5/data.c oef5/colors.c)
 target_link_libraries(Opg05 m ${OPENGL_LIBRARY} ${GLUT_LIBRARY})
 
+add_executable(Opg06 oef6/main.c oef6/colors.c oef6/helpers.c oef6/stl.c oef6/text.c)
+target_link_libraries(Opg06 m ${OPENGL_LIBRARY} ${GLUT_LIBRARY})
+
 add_executable(template3D template3D/main.c template3D/colors.c template3D/colors.h template3D/helpers.c template3D/helpers.h template3D/text.c template3D/text.h template3D/stl.c template3D/stl.h)
 target_link_libraries(template3D m ${OPENGL_LIBRARY} ${GLUT_LIBRARY})
 
-add_executable(project project/main.c project/colors.c project/colors.h project/helpers.c project/helpers.h project/text.c project/text.h)
+add_executable(project project/main.c project/colors.c project/colors.h project/helpers.c project/helpers.h project/text.c project/text.h project/user_input.c project/user_input.h)
 target_link_libraries(project m ${OPENGL_LIBRARY} ${GLUT_LIBRARY})
+
+add_executable(oef8 oef8/main.c oef8/colors.c oef8/colors.h oef8/helpers.c oef8/helpers.h oef8/text.c oef8/text.h oef8/stl.c oef8/stl.h)
+target_link_libraries(oef8 m ${OPENGL_LIBRARY} ${GLUT_LIBRARY})

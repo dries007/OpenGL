@@ -365,7 +365,7 @@ void display(void)
     	glutWireCube(1);
     	drawAxis(0.5);
     	glPopMatrix();
-    	glPopAttrib(); /* GL_LINE_WIDTH */
+    glPopAttrib(); /* GL_LINE_WIDTH */
 	
     glEnable(GL_LIGHTING);
     if (light1) glEnable(GL_LIGHT0);

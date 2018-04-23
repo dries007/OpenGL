@@ -1,0 +1,522 @@
+#include "helpers.h"
+
+#include <stdio.h>
+#include <math.h>
+#include <GL/glut.h>
+
+bool overlay = true;
+static bool mouseLeftDown = false;
+static bool mouseRightDown = false;
+static bool mouseMiddleDown = false;
+static double mouseZoomDiv = 10;
+static double mouseRotateDiv = 2.5;
+static double mousePanDiv = 10;
+static Vect2i prevMouse = {0, 0};
+
+
+/* Sane defaults for globals */
+
+Camera camera = {
+        CAM_TYPE_GAME_AZERTY,
+        10, 3, 5,
+        {0.0, 0.0, 0.0},
+        -60, -3
+};
+
+Perspective perspective = {
+        PERSP_TYPE_FOV,
+        0, 0, 0, 0, /* view */
+        90, 1, /* FOV, aspect ratio */
+        0.1, 100, /* near, far */
+};
+
+Window window = {
+        800, 600
+};
+
+/* Helper functions */
+
+void error(int status, const char *message)
+{
+    fputs(message, stderr);
+    exit(status);
+}
+
+void drawAxis(double size)
+{
+    glPushMatrix();
+    glPushAttrib(GL_LINE_STIPPLE);
+    glPushAttrib(GL_LINE_STIPPLE_PATTERN);
+    glPushAttrib(GL_LINE_STIPPLE_REPEAT);
+
+    glBegin(GL_LINES);
+    glColor3f(1, 0, 0); glVertex3d(0, 0, 0); glVertex3d(size, 0, 0);
+    glColor3f(0, 1, 0); glVertex3d(0, 0, 0); glVertex3d(0, size, 0);
+    glColor3f(0, 0, 1); glVertex3d(0, 0, 0); glVertex3d(0, 0, size);
+    glEnd();
+
+    glLineStipple((int) (size / 100), 0xAAAA);
+    glEnable(GL_LINE_STIPPLE);
+    glBegin(GL_LINES);
+    glColor3f(1, 0, 0); glVertex3d(0, 0, 0); glVertex3d(-size, 0, 0);
+    glColor3f(0, 1, 0); glVertex3d(0, 0, 0); glVertex3d(0, -size, 0);
+    glColor3f(0, 0, 1); glVertex3d(0, 0, 0); glVertex3d(0, 0, -size);
+    glEnd();
+
+    glPopAttrib();/* GL_LINE_STIPPLE_REPEAT */
+    glPopAttrib();/* GL_LINE_STIPPLE_PATTERN */
+    glPopAttrib();/* GL_LINE_STIPPLE */
+    glPopMatrix();
+}
+
+void drawCheckersZ(double size, int count)
+{
+    glPushMatrix();
+    glRotated(90, 1, 0, 0);
+    glScaled(size, size, 1);
+
+    Vect4d back = {0, 0, 0, 0.1};
+    Vect4d white = {1, 1, 1, 0.1};
+
+    for (int x = -count; x < count; x++)
+    {
+        for (int y = -count; y < count; y++)
+        {
+            glColor4dv((double*)((x + y) % 2 == 0 ? &back : &white));
+            glRectd(x, y, x+1, y+1);
+        }
+    }
+
+    glPopMatrix();
+}
+
+void drawCrosshair(int size)
+{
+    glBegin(GL_LINES);
+    glVertex2i(window.width/2-size, window.height/2);
+    glVertex2i(window.width/2+size, window.height/2);
+    glVertex2i(window.width/2, window.height/2-size);
+    glVertex2i(window.width/2, window.height/2+size);
+    glEnd();
+}
+
+void moveCamera(double forwards, double strafe, double yaw, double pitch, double x, double y, double z)
+{
+    if (forwards != 0)
+    {
+        double dz = -cos(camera.yaw*M_PI/180.0);
+        double dy = sin(camera.pitch*M_PI/180.0);
+        double dx = sin(camera.yaw*M_PI/180.0);
+        camera.pos.x += dx * forwards;
+        camera.pos.y += dy * forwards;
+        camera.pos.z += dz * forwards;
+    }
+    if (strafe != 0)
+    {
+        double dz = sin(camera.yaw*M_PI/180.0);
+        double dx = cos(camera.yaw*M_PI/180.0);
+        camera.pos.x += dx * strafe;
+        camera.pos.z += dz * strafe;
+    }
+    if (yaw != 0)
+    {
+        camera.yaw += yaw;
+        if (camera.yaw > 180) camera.yaw -= 360;
+        if (camera.yaw < -180) camera.yaw += 360;
+    }
+    if (pitch != 0)
+    {
+        camera.pitch += pitch;
+        if (camera.pitch > 90) camera.pitch = 90;
+        if (camera.pitch < -90) camera.pitch = -90;
+    }
+    if (x != 0 || y != 0 || z != 0)
+    {
+        camera.pos.x += x;
+        camera.pos.y += y;
+        camera.pos.z += z;
+    }
+    glutPostRedisplay();
+}
+
+bool handleMove(unsigned char key, int modifiers, int x, int y)
+{
+    double delta = 1;
+    if (modifiers & GLUT_ACTIVE_ALT) delta *= 10.0;
+    if (modifiers & GLUT_ACTIVE_CTRL) delta *= 0.1;
+
+    switch (camera.type)
+    {
+        case CAM_TYPE_ABSOLUTE:
+            if (modifiers & GLUT_ACTIVE_SHIFT) delta *= -1.0;
+            switch (key)
+            {
+                default: return false;
+
+                case 'x': camera.pos.x += delta; break;
+                case 'y': camera.pos.y += delta; break;
+                case 'z': camera.pos.z += delta; break;
+
+                case 'u': camera.target.y += delta; break;
+                case 'v': camera.target.x += delta; break;
+                case 'w': camera.target.z += delta; break;
+            }
+            glutPostRedisplay();
+            break;
+
+        case CAM_TYPE_GAME_AZERTY:
+            if (modifiers & GLUT_ACTIVE_SHIFT) delta *= 5.0;
+            switch (key)
+            {
+                default: return false;
+
+                case 's': delta *= -1.0;
+                case 'z': moveCamera(delta, 0, 0, 0, 0, 0, 0); break;
+
+                case 'q': delta *= -1.0;
+                case 'd': moveCamera(0, delta, 0, 0, 0, 0, 0); break;
+
+                case 'a': delta *= -1.0;
+                case 'e': delta *= 5; moveCamera(0, 0, delta, 0, 0, 0, 0); break;
+
+                case 'c': delta *= -1.0;
+                case 'f': delta *= 5; moveCamera(0, 0, 0, delta, 0, 0, 0); break;
+
+                case 'k': delta *= -1.0;
+                case 'i': moveCamera(0, 0, 0, 0, delta, 0, 0); break;
+
+                case 'j': delta *= -1.0;
+                case 'l': moveCamera(0, 0, 0, 0, 0, 0, delta); break;
+
+                case 'n': delta *= -1.0;
+                case 'h': moveCamera(0, 0, 0, 0, 0, delta, 0); break;
+            }
+            break;
+        case CAM_TYPE_GAME_QWERTY:
+            switch (key)
+            {
+                default: return false;
+
+                case 's': delta *= -1.0;
+                case 'w': moveCamera(delta, 0, 0, 0, 0, 0, 0); break;
+
+                case 'a': delta *= -1.0;
+                case 'd': moveCamera(0, delta, 0, 0, 0, 0, 0); break;
+
+                case 'q': delta *= -1.0;
+                case 'e': delta *= 5; moveCamera(0, 0, delta, 0, 0, 0, 0); break;
+
+                case 'c': delta *= -1.0;
+                case 'f': delta *= 5; moveCamera(0, 0, 0, delta, 0, 0, 0); break;
+
+                case 'k': delta *= -1.0;
+                case 'i': moveCamera(0, 0, 0, 0, delta, 0, 0); break;
+
+                case 'j': delta *= -1.0;
+                case 'l': moveCamera(0, 0, 0, 0, 0, 0, delta); break;
+
+                case 'n': delta *= -1.0;
+                case 'h': moveCamera(0, 0, 0, 0, 0, delta, 0); break;
+            }
+            break;
+    }
+
+    return true;
+}
+
+
+/* Keyboard input callback */
+void keyboard(unsigned char key, int x, int y)
+{
+    int modifiers = glutGetModifiers();
+
+    /* Make ctrl+letter into lowercase letter */
+    if (key < 0x20 && modifiers & GLUT_ACTIVE_CTRL) key |= 0x60;
+    if (isupper(key)) key = tolower(key);
+
+//    if (isprint(key)) fprintf(stderr, "Keypress %d (%c), mouse %d;%d\n", key, key, x, y);
+//    else fprintf(stderr, "Keypress %d (0x%X), mouse %d;%d\n", key, key, x, y);
+
+    if (handleMove(key, modifiers, x, y)) return;
+
+    switch (key)
+    {
+        default: return;
+        case 27: exit(0);
+    }
+
+    glutPostRedisplay();
+}
+
+/* Special (meta kays) keyboard input callback */
+void special(int key, int x, int y)
+{
+//    fprintf(stderr, "Special keypress %d, mouse %d;%d\n", key, x, y);
+
+    switch (key)
+    {
+        default: return;
+
+        case GLUT_KEY_F1:
+            overlay = !overlay;
+            break;
+
+        case GLUT_KEY_F2:
+            switch (perspective.type)
+            {
+                case PERSP_TYPE_ORTHO:
+                    perspective.type = PERSP_TYPE_FRUSTUM;
+                    break;
+
+                case PERSP_TYPE_FRUSTUM:
+                    perspective.type = PERSP_TYPE_FOV;
+                    perspective.fov = 90;
+                    perspective.aspect = (double) window.width / window.height;
+                    break;
+
+                case PERSP_TYPE_FOV:
+                    perspective.type = PERSP_TYPE_ORTHO;
+                    perspective.left = -10;
+                    perspective.right = 10;
+                    perspective.bottom = -10;
+                    perspective.top = 10;
+                    break;
+            }
+            reshape(window.width, window.height);
+            break;
+
+        case GLUT_KEY_F3:
+            switch (camera.type)
+            {
+                case CAM_TYPE_ABSOLUTE:
+                    camera.type = CAM_TYPE_GAME_AZERTY;
+                    camera.pitch = 0;
+                    camera.yaw = 0;
+                    break;
+
+                case CAM_TYPE_GAME_AZERTY:
+                    camera.type = CAM_TYPE_GAME_QWERTY;
+                    break;
+
+                case CAM_TYPE_GAME_QWERTY:
+                    camera.type = CAM_TYPE_ABSOLUTE;
+                    /*camera.target = (Vect3d){0, 0, 0};*/
+                    camera.target.x = 0;
+                    camera.target.y = 0;
+                    camera.target.z = 0;
+                    break;
+            }
+            break;
+
+    }
+
+    glutPostRedisplay();
+}
+
+/* Window reshaped callback */
+void reshape(int w, int h)
+{
+//    fprintf(stderr, "Reshape, Window size %d;%d\n", w, h);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+
+    window.width = w;
+    window.height = h;
+
+    switch (perspective.type)
+    {
+        case PERSP_TYPE_ORTHO:
+            glOrtho(perspective.left, perspective.right, perspective.bottom, perspective.top, perspective.near, perspective.far);
+            break;
+
+        case PERSP_TYPE_FRUSTUM:
+            glOrtho(perspective.left, perspective.right, perspective.bottom, perspective.top, perspective.near, perspective.far);
+            break;
+
+        case PERSP_TYPE_FOV:
+            perspective.aspect = (double) window.width / window.height;
+            gluPerspective(perspective.fov, perspective.aspect, perspective.near, perspective.far);
+            break;
+    }
+
+    glViewport(0, 0, w, h);
+}
+
+/* Mouse buttons */
+void mouse(int button, int state, int x, int y)
+{
+//    fprintf(stderr, "Mouse %x %x %d %d\n", button, state, x, y);
+
+    /* prevMouse = (Vect2i) {x, y};*/
+    prevMouse.x = x;
+    prevMouse.y = y;
+
+    switch (button)
+    {
+        default: return;
+        case GLUT_LEFT_BUTTON: mouseLeftDown = state == GLUT_DOWN; break;
+        case GLUT_RIGHT_BUTTON: mouseRightDown = state == GLUT_DOWN; break;
+        case GLUT_MIDDLE_BUTTON: mouseMiddleDown = state == GLUT_DOWN; break;
+        case 3:
+        case 4:
+            // Scroll wheel
+            switch (camera.type)
+            {
+                case CAM_TYPE_ABSOLUTE:
+                    //todo
+                    break;
+                case CAM_TYPE_GAME_AZERTY:
+                case CAM_TYPE_GAME_QWERTY:
+                    moveCamera(button == 3 ? 1 : -1, 0, 0, 0, 0, 0, 0); // zoom
+                    break;
+            }
+    }
+}
+
+/* Mouse dragging */
+void motion(int x, int y)
+{
+//    fprintf(stderr, "Motion %d %d\n", x, y);
+
+    double dx = prevMouse.x - x;
+    double dy = prevMouse.y - y;
+    prevMouse.x = x;
+    prevMouse.y = y;
+
+    switch (camera.type)
+    {
+        case CAM_TYPE_ABSOLUTE:
+            //todo
+            break;
+        case CAM_TYPE_GAME_AZERTY:
+        case CAM_TYPE_GAME_QWERTY:
+            if (mouseLeftDown) moveCamera(0, dx/mouseZoomDiv, 0, 0, 0, dy/mousePanDiv, 0); // Y & strafe
+            if (mouseRightDown) moveCamera(0, 0, -dx/mouseRotateDiv, dy/mouseRotateDiv, 0, 0, 0); // yaw & pitch
+            if (mouseMiddleDown) moveCamera(0, 0, 0, 0, dx/mousePanDiv, 0, dy/mousePanDiv); // pan X Z
+            break;
+    }
+}
+
+
+const char *TITLE = "Texture stuff";
+const char *KEYMAP = "Common keys:\n"
+        "- ESC: Quit\n"
+        "- F1: Toggle overlay\n"
+        "- F2: Change perspective\n"
+        "- F3: Change mode\n"
+        "Movement modifiers:\n"
+        "- Shift = x5 or x-1\n"
+        "- Alt = x10\n"
+        "- Ctrl = x0.1\n"
+;
+const char *KEYMAP_ABSOLUTE = "Absolute mode:\n"
+        "- XTY: Move cam\n"
+        "- UVW: Move focus\n"
+;
+const char *KEYMAP_AZERTY = "AZERTY mode:\n"
+        "- ZS: Forward & Back\n"
+        "- QD: Left & Right\n"
+        "- AE: Rotate (Yaw)\n"
+        "- FC: Rotate (Pitch)\n"
+        "- HN: Absolute Y\n"
+        "- IK: Absolute X\n"
+        "- JL: Absolute Z\n"
+;
+const char *KEYMAP_QWERTY = "QWERTY mode:\n"
+        "- WS: Forward & Back\n"
+        "- AD: Left & Right\n"
+        "- QE: Rotate (Yaw)\n"
+        "- FC: Rotate (Pitch)\n"
+        "- HN: Absolute Y\n"
+        "- IK: Absolute X\n"
+        "- JL: Absolute Z\n"
+;
+const char *MOUSE_ABSOLUTE = "Mouse:\n"
+    //todo
+;
+const char *MOUSE_GAME = "Mouse:\n"
+        "- Left: Strafe, Pan Y\n"
+        "- Right: Rotate\n"
+        "- Middle: Pan XZ\n"
+        "- Scroll: Zoom\n"
+;
+#include "text.h"
+void drawOverlay()
+{
+    if (camera.type == CAM_TYPE_ABSOLUTE)
+    {
+        glPushMatrix();
+        glTranslated(camera.target.x, camera.target.y, camera.target.z);
+        glPushAttrib(GL_LINE_BIT);
+        glLineWidth(3);
+        drawAxis(1);
+        glPopAttrib(); /* GL_LINE_WIDTH */
+        glPopMatrix();
+    }
+
+    if (overlay) /* Draw overlay last, so it's always 'on top' of the scene. */
+    {
+        /* START "context" switch, to overlay mode */
+        glMatrixMode(GL_PROJECTION); /* Change to projection required. */
+        glPushMatrix(); /* Save Projection matrix */
+        glLoadIdentity(); /* Cleanup */
+        gluOrtho2D(0, window.width, window.height, 0); /* Got to 2D view with (0;0) TL -> (w;h) BR */
+        glMatrixMode(GL_MODELVIEW); /* Back to drawing stuff */
+        glLoadIdentity(); /* Cleanup */
+        glDisable(GL_DEPTH_TEST); /* No depth test for overlay elements */
+        /* END "context" switch, to overlay mode */
+
+        glColor3f(0, 0, 0);
+
+        Vect2i cursorL = {5, font_line_height};
+        Vect2i cursorR = {window.width-5, font_line_height};
+
+        disp_puts(&cursorL, ALIGN_LEFT, KEYMAP);
+
+        disp_printf(&cursorR, ALIGN_RIGHT, "Camera: X: %4.2lf Y: %4.2lf Z: %4.2lf\n", camera.pos.x, camera.pos.y, camera.pos.z);
+        switch (camera.type)
+        {
+            case CAM_TYPE_ABSOLUTE:
+                disp_printf(&cursorR, ALIGN_RIGHT, "Target: X: %4.2lf Y: %4.2lf Z: %4.2lf\n", camera.target.x, camera.target.y, camera.target.z);
+                disp_puts(&cursorL, ALIGN_LEFT, KEYMAP_ABSOLUTE);
+                disp_puts(&cursorL, ALIGN_LEFT, MOUSE_ABSOLUTE);
+                break;
+            case CAM_TYPE_GAME_AZERTY:
+                disp_printf(&cursorR, ALIGN_RIGHT, "Yaw: %4.2lf Pitch: %4.2lf\n", camera.yaw, camera.pitch);
+                disp_puts(&cursorL, ALIGN_LEFT, KEYMAP_AZERTY);
+                disp_puts(&cursorL, ALIGN_LEFT, MOUSE_GAME);
+                break;
+
+            case CAM_TYPE_GAME_QWERTY:
+                disp_printf(&cursorR, ALIGN_RIGHT, "Yaw: %4.2lf Pitch: %4.2lf\n", camera.yaw, camera.pitch);
+                disp_puts(&cursorL, ALIGN_LEFT, KEYMAP_QWERTY);
+                disp_puts(&cursorL, ALIGN_LEFT, MOUSE_GAME);
+                break;
+        }
+
+        disp_printf(&cursorR, ALIGN_RIGHT, "Render distance %4.2lf - %4.2lf\n", perspective.near, perspective.far);
+
+        switch (perspective.type)
+        {
+            case PERSP_TYPE_ORTHO: disp_puts(&cursorR, ALIGN_RIGHT, "Perspective: Ortho\n"); break;
+            case PERSP_TYPE_FRUSTUM: disp_puts(&cursorR, ALIGN_RIGHT, "Perspective: Frustum\n"); break;
+            case PERSP_TYPE_FOV: disp_puts(&cursorR, ALIGN_RIGHT, "Perspective: FOV\n"); break;
+        }
+        switch (camera.type)
+        {
+            case CAM_TYPE_ABSOLUTE: disp_puts(&cursorR, ALIGN_RIGHT, "Camera Absolute mode.\n"); break;
+            case CAM_TYPE_GAME_AZERTY: disp_puts(&cursorR, ALIGN_RIGHT, "Camera AZERTY mode\n"); break;
+            case CAM_TYPE_GAME_QWERTY: disp_puts(&cursorR, ALIGN_RIGHT, "Camera QWERTY mode\n"); break;
+        }
+
+        if (camera.type != CAM_TYPE_ABSOLUTE)
+        {
+            glColor4f(1, 1, 1, .9);
+            drawCrosshair(10);
+        }
+
+        glMatrixMode(GL_PROJECTION); /* Change to projection required. */
+        glPopMatrix(); /* Restore projection matrix */
+    }
+}
