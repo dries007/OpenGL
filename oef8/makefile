@@ -5,12 +5,11 @@ all All: $(TARGETS)
 
 INCPATH = -I/usr/local/include
 LIBPATH = -L. -L/usr/local/lib/hpux32
-LIBS = -lglut -lGLU -lGL -lGLw -lXt -lXext -lX11 -ljpeg -lm 
-DEBUGFLAGS = +O3
-CFLAGS = +DD32 $(DEBUGFLAGS) $(INCPATH)
+LIBS = -lglut -lGLU -lGL -lglut -lXt -lXext -lX11 -ljpeg -lm
+CFLAGS = $(INCPATH)
 
 SRCS = \
-	main.c stl.c colors.c text.c helpers.c 
+	main.c stl.c colors.c text.c helpers.c InitJPG.c
 
 OBJS = $(SRCS:.c=.o)
 
@@ -22,7 +21,7 @@ OBJS = $(SRCS:.c=.o)
 
 run:  clean $(OBJS)
 	LDOPTS= \
-	cc -o run $(CFLAGS) $(OBJS) ../jpg/InitJPG.o $(LIBPATH) $(LIBS) 
+	cc -o run $(CFLAGS) $(OBJS) $(LIBPATH) $(LIBS)
 
 clean:
 	rm -f run $(OBJS) core

@@ -8,11 +8,14 @@
 #include "helpers.h"
 #include "user_input.h"
 #include "text.h"
+#include "stl.h"
 
 const float white[] = {1.0, 1.0, 1.0, 1.0};
 const float black[] = {0.0, 0.0, 0.0, 1.0};
 float posLight0[] = {10.0, 5.0, 5.0, 1.0};
 float posLight1[] = {0.0, 0.0, 0.0, 1.0};
+
+Model* tesla = NULL;
 
 double distance = 0;
 
@@ -37,7 +40,7 @@ void cuboid(double x, double y, double z)
 
 void cylinder(double radius_bottom, double radius_top, double height, double radius_hole)
 {
-    const int roundness = 16;
+    const int roundness = 64;
     GLUquadric* quad = gluNewQuadric();
     glPushMatrix();
 
@@ -67,6 +70,7 @@ void wheel()
 
     cylinder(1, 1, 0.2, 0.8); // Wheel
     cylinder(0.1, 0.1, 0.4, 0); // Axel
+    cylinder(0.1, 0.1, 0.4, 0); // Axel
 
     for (int a = 0; a < 360; a += (360/7)) // Spokes
     {
@@ -80,39 +84,70 @@ void wheel()
     glPopMatrix();
 }
 
+void finish(double width, double height)
+{
+    glPushMatrix();
+
+    glTranslated(0, height / 2, 0);
+
+    glPushMatrix();
+    glTranslated(-width / 2, 0, 0);
+    glRotated(90, 1, 0, 0);
+    cylinder(0.2, 0.2, height, 0);  // Left pole
+    glPopMatrix();
+    glPushMatrix();
+    glTranslated(width / 2, 0, 0);
+    glRotated(90, 1, 0, 0);
+    cylinder(0.2, 0.2, height, 0);  // Right pole
+    glPopMatrix();
+
+    glTranslated(0, height / 2, 0);
+    cuboid(width + 1, 0.4, 0.4);
+
+    glPopMatrix();
+}
+
 void zeepkist()
 {
     GLUquadric* quad = gluNewQuadric();
-
     glPushMatrix();
 
     glTranslated(0, 1, 0);
-    glTranslated(0, 0, distance);
 
-    cuboid(2, 0.1, 2);
+    cuboid(2, 0.1, 2); // back chassis body cuboid
 
     glPushMatrix();
     glTranslated(1.2, 0, 0);
-    wheel();
+    wheel(); // back wheel 1
     glPopMatrix();
     glPushMatrix();
     glTranslated(-1.2, 0, 0);
-    wheel();
+    wheel(); // back wheel 2
     glPopMatrix();
 
+    glPushMatrix();
     glTranslated(0, 0, 2);
-    cuboid(1, 0.1, 2);
+    cuboid(1, 0.1, 2); // front chassis body cuboid
     glTranslated(0, 0, 1.7);
     glPushMatrix();
     glTranslated(0.3, 0, 0);
-    cuboid(0.2, 0.1, 1.4);
+    cuboid(0.2, 0.1, 1.4); // front chassis wheel connector 1
     glPopMatrix();
     glPushMatrix();
     glTranslated(-0.3, 0, 0);
-    cuboid(0.2, 0.1, 1.4);
+    cuboid(0.2, 0.1, 1.4); // front chassis wheel connector 2
     glPopMatrix();
     glTranslated(0, 0, 0.5);
-    wheel();
+    wheel();  // front wheel
+    glPopMatrix();
+
+    glPushMatrix();
+    glRotated(270, 1, 0, 0);
+    glTranslated(0, 0, 0.45);
+    cylinder(0.5, 0.3, 1, 0);  // Chair bottom
+    glTranslated(0, 0, 0.55);
+    cylinder(0.8, 0.8, 0.1, 0);  // Chair bottom
+    glPopMatrix();
 
     glPopMatrix();
     gluDeleteQuadric(quad);
@@ -133,8 +168,6 @@ void display(void)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glShadeModel(flat ? GL_FLAT : GL_SMOOTH);
-
-
 
     switch (camera.type)
     {
@@ -174,11 +207,36 @@ void display(void)
     glEnable(GL_LIGHT0);
     glEnable(GL_LIGHT1);
 
-    float material[] = {0.7, 0.2, 0.2, 1};
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, material);
-    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 64.0);
+    {
+        float material[] = {0.7, 0.2, 0.2, 1};
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, material);
+        glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 64.0);
+    }
 
+    glPushMatrix();
+    glTranslated(0, 0, distance);
     zeepkist();
+
+    if (tesla != NULL)
+    {
+        glTranslated(0, 1.25, 0);
+        glScaled(0.05, 0.05, 0.05);
+        glRotated(-90, 1, 0, 0);
+        stlDisplayModel(tesla);
+    }
+
+    glPopMatrix();
+
+    {
+        float material[] = {1, 1, 1, 1};
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, material);
+        glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 64.0);
+    }
+
+    glPushMatrix();
+    glTranslated(0, 0, 10);
+    finish(10, 5);
+    glPopMatrix();
 
     glDisable(GL_LIGHT0);
     glDisable(GL_LIGHT1);
@@ -244,6 +302,8 @@ int main(int argc, char *argv[])
     glutMouseFunc(mouse);
     glutMotionFunc(motion);
     glutSetCursor(GLUT_CURSOR_INFO);
+
+    tesla = stlLoadFile("Tesla.stl");
 
     puts("OpenGL/GLU/GLUT Project. 2018 - Dries007\n");
     puts(KEYMAP);
