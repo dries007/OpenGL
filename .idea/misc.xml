@@ -1,15 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="CMakeWorkspace" PROJECT_DIR="$PROJECT_DIR$" />
-  <component name="CidrRootsConfiguration">
-    <sourceRoots>
-      <file path="$PROJECT_DIR$/oef123" />
-      <file path="$PROJECT_DIR$/oef4" />
-      <file path="$PROJECT_DIR$/oef5" />
-      <file path="$PROJECT_DIR$/oef6" />
-      <file path="$PROJECT_DIR$/oef8" />
-      <file path="$PROJECT_DIR$/project" />
-      <file path="$PROJECT_DIR$/template3D" />
-    </sourceRoots>
-  </component>
 </project>

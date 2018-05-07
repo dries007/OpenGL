@@ -4,33 +4,8 @@
 #include <math.h>
 #include <GL/glut.h>
 
-/* Sane defaults for globals */
-
-Camera camera = {
-        CAM_TYPE_GAME_AZERTY,
-        10, 3, 5,
-        {0.0, 0.0, 0.0},
-        -60, -3
-};
-
-Perspective perspective = {
-        PERSP_TYPE_FOV,
-        0, 0, 0, 0, /* view */
-        90, 1, /* FOV, aspect ratio */
-        0.1, 100, /* near, far */
-};
-
-Window window = {
-        800, 600
-};
 
 /* Helper functions */
-
-void error(int status, const char *message)
-{
-    fputs(message, stderr);
-    exit(status);
-}
 
 void drawAxis(double size)
 {

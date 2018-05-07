@@ -3,6 +3,23 @@
 #include <GL/glut.h>
 #include <ctype.h>
 
+Camera camera = {
+        CAM_TYPE_GAME_AZERTY,
+        10, 3, 5,
+        {0.0, 0.0, 0.0},
+        -60, -3
+};
+
+Perspective perspective = {
+        PERSP_TYPE_FOV,
+        0, 0, 0, 0, /* view */
+        90, 1, /* FOV, aspect ratio */
+        0.1, 100, /* near, far */
+};
+
+Window window = {
+        800, 600
+};
 
 bool overlay = true;
 bool mouseLeftDown = false;
@@ -16,8 +33,17 @@ bool wire = false;
 bool move = false;
 bool flat = false;
 
-const char *TITLE = "3D Project";
-const char *KEYMAP = "Common keys:\n"
+const char *TITLE = "Zeepkisten race";
+const char *KEYMAP = "Keymap\n";
+const char *KEYMAP_ABSOLUTE = "Absolute\n";
+const char *KEYMAP_QWERTY = "QWERTY\n";
+const char *KEYMAP_AZERTY = "AZERTY\n";
+const char *MOUSE_ABSOLUTE = "Absolute\n";
+const char *MOUSE_GAME = "Game\n";
+
+/*
+const char *KEYMAP = "*****TODO******\n" // todo
+                     "Common keys:\n"
                      "- ESC: Quit\n"
                      "- F1: Toggle overlay\n"
                      "- F2: Change perspective\n"
@@ -62,7 +88,7 @@ const char *MOUSE_GAME = "Mouse:\n"
                          "- Middle: Pan XZ\n"
                          "- Scroll: Zoom\n"
 ;
-
+*/
 
 /* Keyboard input callback */
 void keyboard(unsigned char key, int x, int y)
@@ -145,7 +171,6 @@ void special(int key, int x, int y)
 
                 case CAM_TYPE_GAME_QWERTY:
                     camera.type = CAM_TYPE_ABSOLUTE;
-                    /*camera.target = (Vect3d){0, 0, 0};*/
                     camera.target.x = 0;
                     camera.target.y = 0;
                     camera.target.z = 0;
@@ -164,8 +189,6 @@ void special(int key, int x, int y)
 /* Window reshaped callback */
 void reshape(int w, int h)
 {
-//    fprintf(stderr, "Reshape, Window size %d;%d\n", w, h);
-
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
 
@@ -260,7 +283,6 @@ void drawOverlay()
     glDisable(GL_DEPTH_TEST); /* No depth test for overlay elements */
     /* END "context" switch, to overlay mode */
 
-//    glColor3f(0, 0, 0);
     glColor3f(1, 1, 1);
 
     Vect2i cursorL = {5, font_line_height};
@@ -319,7 +341,6 @@ void drawOverlay()
         drawCrosshair(10);
     }
 
-    //glPopAttrib(); /* Restore GL_DEPTH_TEST */
     glMatrixMode(GL_PROJECTION); /* Change to projection required. */
     glPopMatrix(); /* Restore projection matrix */
 }

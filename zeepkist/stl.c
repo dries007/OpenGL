@@ -1,10 +1,5 @@
 #include "stl.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <GL/glut.h>
-
 #define STL_HEADER_SIZE 80
 #define STL_FACET_SIZE (4*3*4+2)
 

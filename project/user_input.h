@@ -1,3 +1,6 @@
+#ifndef OPENGL_USER_INPUT_H
+#define OPENGL_USER_INPUT_H
+
 #include <stdbool.h>
 #include "helpers.h"
 
@@ -29,3 +32,5 @@ extern const char *KEYMAP_AZERTY;
 extern const char *KEYMAP_QWERTY;
 extern const char *MOUSE_ABSOLUTE;
 extern const char *MOUSE_GAME;
+
+#endif //OPENGL_USER_INPUT_H

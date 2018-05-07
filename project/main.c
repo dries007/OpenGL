@@ -1,10 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <ctype.h>
-#include <math.h>
-#include <GL/glut.h>
-
 #include "helpers.h"
 #include "user_input.h"
 #include "text.h"
@@ -18,14 +11,18 @@ float posLight1[] = {0.0, 0.0, 0.0, 1.0};
 Model* tesla = NULL;
 
 double distance = 0;
+int zeepkisten = 2;
+
+int weglengte = 100;
+double snelheid = 0.1;
 
 void idle(void);
 
 void idle()
 {
     if (!move) return;
-    distance += 0.05;
-    if (distance > 10) distance = -10;
+    distance += snelheid;
+    if (distance > weglengte) distance = 0;
     glutPostRedisplay();
 }
 
@@ -48,12 +45,12 @@ void cylinder(double radius_bottom, double radius_top, double height, double rad
 
     gluQuadricDrawStyle(quad, wire ? GLU_LINE : GLU_FILL);
 
-    gluDisk(quad, radius_hole, radius_bottom, (int) (roundness * radius_bottom), 1); // Bottom
-    gluCylinder(quad, radius_bottom, radius_top, height, (int) (roundness * (radius_bottom > radius_top ? radius_bottom : radius_top)), 1); // Mantle
+    gluDisk(quad, radius_hole, radius_bottom, (int) (roundness * radius_bottom), roundness); // Bottom
+    gluCylinder(quad, radius_bottom, radius_top, height, (int) (roundness * (radius_bottom > radius_top ? radius_bottom : radius_top)), roundness); // Mantle
     if (radius_hole != 0)
-        gluCylinder(quad, radius_hole, radius_hole, height, (int) (roundness * radius_hole), 1); // Hole Mantle
+        gluCylinder(quad, radius_hole, radius_hole, height, (int) (roundness * radius_hole), roundness); // Hole Mantle
     glTranslated(0, 0, height);
-    gluDisk(quad, radius_hole, radius_top, (int) (roundness * radius_top), 1); // Top
+    gluDisk(quad, radius_hole, radius_top, (int) (roundness * radius_top), roundness); // Top
     glTranslated(0, 0, -height);
 
     glPopMatrix();
@@ -208,14 +205,18 @@ void display(void)
     glEnable(GL_LIGHT1);
 
     {
-        float material[] = {0.7, 0.2, 0.2, 1};
+        float material[] = {1, 1, 1, 1};
         glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, material);
         glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 64.0);
     }
 
     glPushMatrix();
     glTranslated(0, 0, distance);
-    zeepkist();
+    for (int i = 0; i < zeepkisten; i++)
+    {
+        zeepkist();
+        glTranslated(-5, 0, 0);
+    }
 
     if (tesla != NULL)
     {
@@ -260,7 +261,6 @@ void display(void)
     if (overlay) drawOverlay(); /* Draw overlay last, so it's always 'on top' of the scene. */
 
     glutSwapBuffers();
-    /*glFlush();*/
 }
 
 int main(int argc, char *argv[])

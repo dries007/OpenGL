@@ -1,14 +1,26 @@
-#ifndef OPENGL_HELPERS_H
-#define OPENGL_HELPERS_H
+#ifndef OPENGL_TYPES_H
+#define OPENGL_TYPES_H
+
+/**
+ * Contains global includes, types and variables (extern only)
+ */
+
+/*
+ * LIB INCLUDES
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
+#include <stdarg.h>
 #include <ctype.h>
 #include <math.h>
 #include <GL/glut.h>
 
-/* Types */
+/*
+ * TYPES
+ */
 
 typedef struct {
     int x, y;
@@ -49,17 +61,21 @@ typedef struct {
     int width, height;
 } Window;
 
+/*
+ * GLOBALS
+ */
+
 extern Camera camera;
 extern Perspective perspective;
 extern Window window;
 
-/* Helper functions */
+/*
+ * PROJECT INCLUDES
+ */
 
-void drawAxis(double size);
-void drawCheckersZ(double size, int count);
-void drawCrosshair(int size);
+#include "stl.h"
+#include "draw.h"
+#include "input.h"
+#include "text.h"
 
-bool handleMove(unsigned char key, int modifiers, int x, int y);
-void moveCamera(double forwards, double strafe, double yaw, double pitch, double x, double y, double z);
-
-#endif //OPENGL_HELPERS_H
+#endif //OPENGL_TYPES_H

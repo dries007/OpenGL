@@ -1,12 +1,4 @@
 #include "text.h"
-#include "helpers.h"
-
-#include <stdio.h>
-#include <stdbool.h>
-#include <stdarg.h>
-#include <string.h>
-#include <GL/glut.h>
-
 
 void* font = GLUT_BITMAP_9_BY_15;
 int font_line_height = 15;
