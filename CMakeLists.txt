@@ -34,9 +34,9 @@ include_directories(${OPENGL_INCLUDE_DIR} ${GLUT_INCLUDE_DIR})
 #add_executable(template3D template3D/main.c template3D/colors.c template3D/colors.h template3D/helpers.c template3D/helpers.h template3D/text.c template3D/text.h template3D/stl.c template3D/stl.h)
 #target_link_libraries(template3D m ${OPENGL_LIBRARY} ${GLUT_LIBRARY})
 
-add_executable(project project/main.c project/colors.c project/colors.h project/helpers.c project/helpers.h project/text.c project/text.h project/user_input.c project/user_input.h project/stl.h project/stl.c)
-target_link_libraries(project m ${OPENGL_LIBRARY} ${GLUT_LIBRARY})
-#
+#add_executable(project project/main.c project/colors.c project/colors.h project/helpers.c project/helpers.h project/text.c project/text.h project/user_input.c project/user_input.h project/stl.h project/stl.c)
+#target_link_libraries(project m ${OPENGL_LIBRARY} ${GLUT_LIBRARY})
+
 #add_executable(oef8 oef8/main.c oef8/colors.c oef8/colors.h oef8/helpers.c oef8/helpers.h oef8/text.c oef8/text.h oef8/stl.c oef8/stl.h)
 #target_link_libraries(oef8 m ${OPENGL_LIBRARY} ${GLUT_LIBRARY})
 

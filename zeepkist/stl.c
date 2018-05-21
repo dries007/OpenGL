@@ -138,6 +138,7 @@ void stlDisplayModel(Model *model)
     for (int i = 0; i < model->nrOfFacets; i++)
     {
         Facet f = model->facets[i];
+        glNormal3fv(f.normal);
         glVertex3fv(f.v1);
         glVertex3fv(f.v2);
         glVertex3fv(f.v3);

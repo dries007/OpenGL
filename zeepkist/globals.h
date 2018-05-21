@@ -61,13 +61,44 @@ typedef struct {
     int width, height;
 } Window;
 
+typedef struct {
+    bool wireframe;
+    bool flat;
+    bool debug_lights;
+    bool light0;
+    bool light1;
+    bool light2;
+    bool light3;
+    float material[4];
+    float shininess;
+    bool debug_lookat;
+    bool overlay;
+    bool move;
+} Settings;
+
+typedef struct car {
+    void (*draw)(struct car*);
+    void * drawing_data;
+    double pos;
+    double speed;
+    double acceleration;
+    double max_speed;
+    double max_acceleration;
+    double power;
+    bool finished;
+} Car;
+
 /*
  * GLOBALS
  */
 
-extern Camera camera;
-extern Perspective perspective;
-extern Window window;
+/* Defined in main.c */
+extern const float ROAD_LENGHT;
+extern const float LANE_WIDTH;
+extern Camera CAMERA;
+extern Perspective PERSPECTIVE;
+extern Window WINDOW;
+extern Settings SETTINGS;
 
 /*
  * PROJECT INCLUDES
