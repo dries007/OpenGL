@@ -16,6 +16,7 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include <math.h>
+#include <time.h>
 #include <GL/glut.h>
 
 /*
@@ -31,8 +32,12 @@ typedef struct {
 } Vect3d;
 
 typedef struct {
-    double x, y, z, w;
-} Vect4d;
+    float x, y, z;
+} Vect3f;
+
+typedef struct {
+    float x, y, z, w;
+} Vect4f;
 
 typedef enum {
     CAM_TYPE_ABSOLUTE, CAM_TYPE_GAME_AZERTY, CAM_TYPE_GAME_QWERTY
@@ -69,8 +74,12 @@ typedef struct {
     bool light1;
     bool light2;
     bool light3;
-    float material[4];
+    Vect4f light0Pos;
+    Vect4f light1Pos;
+    Vect4f light2Pos;
+    Vect4f light3Pos;
     float shininess;
+    bool debug_axis;
     bool debug_lookat;
     bool overlay;
     bool move;
@@ -108,5 +117,6 @@ extern Settings SETTINGS;
 #include "draw.h"
 #include "input.h"
 #include "text.h"
+#include "textures.h"
 
 #endif //OPENGL_TYPES_H

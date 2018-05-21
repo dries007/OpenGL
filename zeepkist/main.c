@@ -15,15 +15,10 @@ static void reshape(int w, int h);
 
 /* Private globals */
 static Model * tesla;
+static uint banners;
 
 static size_t n_cars;
 static Car* cars;
-
-/* Light sources are positional */
-static float posLight0[] = {  0.0f, 10.0f, -50.0f, 1.0f};
-static float posLight1[] = {-10.0f, 10.0f, -25.0f, 1.0f};
-static float posLight2[] = { 10.0f, 10.0f,  25.0f, 1.0f};
-static float posLight3[] = {  0.0f, 10.0f,  50.0f, 1.0f};
 
 /* Globals definitions. They are declared in globals.h */
 const float ROAD_LENGHT = 100;
@@ -31,40 +26,43 @@ const float LANE_WIDTH = 5;
 
 Camera CAMERA = {
         CAM_TYPE_GAME_AZERTY,
-        10, 3, 5,
-        {0.0, 0.0, 0.0},
-        -60, -3
+        25, 25, 55,
+        0.0, 0.0, 0.0,
+        -25, -20
 };
 
 Perspective PERSPECTIVE = {
         PERSP_TYPE_FOV,
         0, 0, 0, 0, /* view */
         90, 1, /* FOV, aspect ratio */
-        0.1, 100, /* near, far */
+        0.1, 250, /* near, far */
 };
 
 Window WINDOW = {
-        800, 600
+        1000, 600
 };
 
 Settings SETTINGS = {
         false, /* Wireframe */
         false, /* Flat shading */
         true, /* Debug Lights */
-        false, /* Light0 */
-        true, /* Light1 */
-        true, /* Light2 */
-        false, /* Light3 */
-        {1, 1, 1, 1}, /* Material */
+        true, /* Light 0 */
+        true, /* Light 2 */
+        true, /* Light 3 */
+        true, /* Light 1 */
+        {  0.0f, 10.0f, -50.0f, 1.0f}, /* Light 0 */
+        {-10.0f, 10.0f, -25.0f, 1.0f}, /* Light 1 */
+        { 10.0f, 10.0f,  25.0f, 1.0f}, /* Light 1 */
+        {-10.0f, 10.0f,  25.0f, 1.0f}, /* Light 3 */
         64, /* Shininess */
+        false, /* Debug Axis */
         true, /* Debug LookAt */
         true, /* Draw overlay */
-        true, /* Move */
+        false, /* Move */
 };
 
-
-
 /* Callback function definitions */
+
 /**
  * Idle callback
  * does motion
@@ -102,9 +100,9 @@ static void idle()
             cars[i].speed = 0;
             cars[i].acceleration = 0;
 
-            cars[i].max_speed = fabs(randn(0.1, 0.5));
-            cars[i].max_acceleration = fabs(randn(0.01, 0.05));
-            cars[i].power = fabs(randn(0.001, 0.005));
+            cars[i].max_speed = 0.01 + fabs(randn(0.1, 0.5));
+            cars[i].max_acceleration = 0.001 + fabs(randn(0.01, 0.05));
+            cars[i].power = 0.0001 + fabs(randn(0.001, 0.005));
         }
     }
 
@@ -143,15 +141,15 @@ static void display()
     }
 
     /* Setup lights */
-    glLightfv(GL_LIGHT0, GL_POSITION, (GLfloat*) &posLight0);
-    glLightfv(GL_LIGHT1, GL_POSITION, (GLfloat*) &posLight1);
-    glLightfv(GL_LIGHT2, GL_POSITION, (GLfloat*) &posLight2);
-    glLightfv(GL_LIGHT3, GL_POSITION, (GLfloat*) &posLight3);
+    glLightfv(GL_LIGHT0, GL_POSITION, (float*) &SETTINGS.light0Pos);
+    glLightfv(GL_LIGHT1, GL_POSITION, (float*) &SETTINGS.light1Pos);
+    glLightfv(GL_LIGHT2, GL_POSITION, (float*) &SETTINGS.light2Pos);
+    glLightfv(GL_LIGHT3, GL_POSITION, (float*) &SETTINGS.light3Pos);
 
     glDisable(GL_LIGHTING); /* Disabled for drawing debug symbols */
 
-    draw_axis(50);
-//    draw_checkers(1, 10);
+    /* Draw debug stuff */
+    if (SETTINGS.debug_axis) draw_axis(50);
 
     if (SETTINGS.debug_lookat && CAMERA.type == CAM_TYPE_ABSOLUTE)
     {
@@ -168,35 +166,32 @@ static void display()
     {
         glPushAttrib(GL_LINE_BIT);
         glLineWidth(3);
-        if (SETTINGS.light0) draw_axis_at(posLight0, 0.5);
-        if (SETTINGS.light1) draw_axis_at(posLight1, 0.5);
-        if (SETTINGS.light2) draw_axis_at(posLight2, 0.5);
-        if (SETTINGS.light3) draw_axis_at(posLight3, 0.5);
+        if (SETTINGS.light0) draw_axis_at((float*) &SETTINGS.light0Pos, 0.5);
+        if (SETTINGS.light1) draw_axis_at((float*) &SETTINGS.light1Pos, 0.5);
+        if (SETTINGS.light2) draw_axis_at((float*) &SETTINGS.light2Pos, 0.5);
+        if (SETTINGS.light3) draw_axis_at((float*) &SETTINGS.light3Pos, 0.5);
         glPopAttrib(); /* GL_LINE_BIT */
     }
 
-    /* Must be called first */
-    glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
+    /* Start non-debug stuff */
+
     glEnable(GL_LIGHTING);
-    glEnable(GL_AUTO_NORMAL);
-    glEnable(GL_NORMALIZE);
-    glEnable(GL_COLOR_MATERIAL);
 
     if (SETTINGS.light0) glEnable(GL_LIGHT0); else glDisable(GL_LIGHT0);
     if (SETTINGS.light1) glEnable(GL_LIGHT1); else glDisable(GL_LIGHT1);
     if (SETTINGS.light2) glEnable(GL_LIGHT2); else glDisable(GL_LIGHT2);
     if (SETTINGS.light3) glEnable(GL_LIGHT3); else glDisable(GL_LIGHT3);
 
-    draw_lamp(posLight0, SETTINGS.light0);
-    draw_lamp(posLight1, SETTINGS.light1);
-    draw_lamp(posLight2, SETTINGS.light2);
-    draw_lamp(posLight3, SETTINGS.light3);
+    draw_lamp(GL_LIGHT0);
+    draw_lamp(GL_LIGHT1);
+    draw_lamp(GL_LIGHT2);
+    draw_lamp(GL_LIGHT3);
 
     glPushMatrix();
 
     glTranslated(LANE_WIDTH / 2.0 + (n_cars * LANE_WIDTH) / -2.0, 0, -ROAD_LENGHT / 2.0);
 
-    draw_road(n_cars);
+    draw_road(n_cars, banners);
 
     for (int i = 0; i < n_cars; i++)
     {
@@ -251,6 +246,9 @@ int main(int argc, char** argv)
 {
     // todo : parse args for default settings?
 
+    /* initialize random seed: */
+    srand(time(NULL));
+
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_ALPHA);
     glutInitWindowSize(WINDOW.width, WINDOW.height);
@@ -259,18 +257,23 @@ int main(int argc, char** argv)
     tesla = stlLoadFile("Tesla.stl");
     if (tesla == NULL) fputs("Tesla model was not loaded :(", stderr);
 
+    banners = textures_load("banners.bmp");
+
     n_cars = 3;
     cars = calloc(n_cars, sizeof(Car));
     for (int i = 0; i < n_cars; i++)
     {
         cars[i].draw = draw_soapbox;
         cars[i].drawing_data = NULL;
-        cars[i].pos = 0;
+
+        cars[i].finished = false;
+        cars[i].pos = (float) (rand() % (int)ROAD_LENGHT);
         cars[i].speed = 0;
         cars[i].acceleration = 0;
-        cars[i].power = .01;
-        cars[i].max_acceleration = .1;
-        cars[i].max_speed = 1;
+
+        cars[i].max_speed = 0.01 + fabs(randn(0.1, 0.5));
+        cars[i].max_acceleration = 0.001 + fabs(randn(0.01, 0.05));
+        cars[i].power = 0.0001 + fabs(randn(0.001, 0.005));
     }
 
     if (tesla != NULL)
@@ -279,36 +282,45 @@ int main(int argc, char** argv)
         cars[0].drawing_data = tesla;
     }
 
-    glClearColor(0.1, 0.1, 0.1, 0);
+    glClearColor(0.0, 0.0, 0.0, 0);
     glClearDepth(1.0);
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
+    glEnable(GL_AUTO_NORMAL);
+    glEnable(GL_NORMALIZE);
+    glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
+    glEnable(GL_COLOR_MATERIAL);
 
-    const float ambient[] = {0.25, 0.25, 0.25, 1};
+    const float ambient[] = {0.1, 0.1, 0.1, 1};
     const float white[] = {1.0, 1.0, 1.0, 1.0};
     const float black[] = {0.0, 0.0, 0.0, 1.0};
+    const float weird1[] = {0.25, 1.0, 1.0, 1.0};
+    const float weird2[] = {1.0, 0.25, 0.25, 1.0};
+    const float yellow[] = {1.0, 1.0, 0.0, 1.0};
 
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
-//    glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
 
-    glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
-    glLightfv(GL_LIGHT1, GL_AMBIENT, ambient);
-    glLightfv(GL_LIGHT2, GL_AMBIENT, ambient);
-    glLightfv(GL_LIGHT3, GL_AMBIENT, ambient);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, white);
-    glLightfv(GL_LIGHT1, GL_DIFFUSE, white);
-    glLightfv(GL_LIGHT2, GL_DIFFUSE, white);
-    glLightfv(GL_LIGHT3, GL_DIFFUSE, white);
+    glLightfv(GL_LIGHT0, GL_AMBIENT, white);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, black);
     glLightfv(GL_LIGHT0, GL_SPECULAR, black);
-    glLightfv(GL_LIGHT1, GL_SPECULAR, black);
-    glLightfv(GL_LIGHT2, GL_SPECULAR, black);
-    glLightfv(GL_LIGHT3, GL_SPECULAR, black);
 
-    glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 0.5);
-    glLightf(GL_LIGHT1, GL_CONSTANT_ATTENUATION, 0.5);
-    glLightf(GL_LIGHT2, GL_CONSTANT_ATTENUATION, 0.5);
-    glLightf(GL_LIGHT3, GL_CONSTANT_ATTENUATION, 0.5);
+    glLightfv(GL_LIGHT1, GL_AMBIENT, black);
+    glLightfv(GL_LIGHT1, GL_DIFFUSE, weird1);
+    glLightfv(GL_LIGHT1, GL_SPECULAR, black);
+
+    glLightfv(GL_LIGHT2, GL_AMBIENT, black);
+    glLightfv(GL_LIGHT2, GL_DIFFUSE, weird2);
+    glLightfv(GL_LIGHT2, GL_SPECULAR, black);
+
+    glLightfv(GL_LIGHT3, GL_AMBIENT, yellow);
+    glLightfv(GL_LIGHT3, GL_DIFFUSE, yellow);
+    glLightfv(GL_LIGHT3, GL_SPECULAR, yellow);
+
+    glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 0.75);
+    glLightf(GL_LIGHT1, GL_CONSTANT_ATTENUATION, 0.75);
+    glLightf(GL_LIGHT2, GL_CONSTANT_ATTENUATION, 0.75);
+    glLightf(GL_LIGHT3, GL_CONSTANT_ATTENUATION, 0.75);
     glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.01);
     glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, 0.01);
     glLightf(GL_LIGHT2, GL_LINEAR_ATTENUATION, 0.01);

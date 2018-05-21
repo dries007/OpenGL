@@ -59,27 +59,6 @@ void draw_axis(double size)
     glPopMatrix();
 }
 
-void draw_checkers(double size, int count)
-{
-    glPushMatrix();
-    glRotated(90, 1, 0, 0);
-    glScaled(size, size, 1);
-
-    Vect4d back = {0, 0, 0, 0.1};
-    Vect4d white = {1, 1, 1, 0.1};
-
-    for (int x = -count; x < count; x++)
-    {
-        for (int y = -count; y < count; y++)
-        {
-            glColor4dv((double*)((x + y) % 2 == 0 ? &back : &white));
-            glRectd(x, y, x+1, y+1);
-        }
-    }
-
-    glPopMatrix();
-}
-
 void draw_axis_at(float* pos, double size)
 {
     glPushMatrix();
@@ -175,10 +154,9 @@ void draw_crosshair(int size)
     glEnd();
 }
 
-void draw_road(size_t lanes)
+void draw_road(size_t lanes, uint banner_texture)
 {
     glPushMatrix();
-    glPushAttrib(GL_LIGHTING_BIT); /* For material */
 
     glRotated(90, 1, 0, 0);
 
@@ -188,24 +166,28 @@ void draw_road(size_t lanes)
     const float start = -LANE_WIDTH;
     const float end = ROAD_LENGHT + LANE_WIDTH;
 
+    /* Start & Finish lines */
     glPushMatrix();
     glTranslated(0, 0, -.001);
-    glColor3ub(66, 244, 229); // Lila-ish
-    glRectf(-LANE_WIDTH/2-stripe, start + 2*LANE_WIDTH + stripe, lanes*LANE_WIDTH-LANE_WIDTH/2+stripe, start + 2*LANE_WIDTH - stripe);
-    glRectf(-LANE_WIDTH/2-stripe, end - 2*LANE_WIDTH + stripe, lanes*LANE_WIDTH-LANE_WIDTH/2+stripe, end - 2*LANE_WIDTH - stripe);
+    glColor3ub(250, 250, 250);
+    for (float i = -LANE_WIDTH/2; i < lanes*LANE_WIDTH-LANE_WIDTH/2; i += 4 * stripe)
+    {
+        glRectf(i, start + 2*LANE_WIDTH + stripe, i + 2 * stripe, start + 2*LANE_WIDTH - stripe);
+        glRectf(i, end - 2*LANE_WIDTH + stripe, i + 2 * stripe, end - 2*LANE_WIDTH - stripe);
+    }
     glPopMatrix();
 
     for (float i = start; i < end; i += step)
     {
         glPushMatrix();
-        glColor3ub(255, 255, 255);
+        glColor3ub(250, 250, 250);
         glRectf(-LANE_WIDTH/2-stripe, i, -LANE_WIDTH/2+stripe, i+step);
 
         for (int lane = 0; lane < lanes; ++lane)
         {
             glColor3ub(66, 66, 66);
             glRectf(-LANE_WIDTH/2+stripe, i, LANE_WIDTH/2-stripe, i+step);
-            glColor3ub(255, 255, 255);
+            glColor3ub(250, 250, 250);
             glRectf(LANE_WIDTH/2-stripe, i, LANE_WIDTH/2+stripe, i+step);
 
             glTranslated(LANE_WIDTH, 0, 0);
@@ -213,16 +195,178 @@ void draw_road(size_t lanes)
         glPopMatrix();
     }
 
-    glPopAttrib(); /* GL_LIGHTING_BIT */
+    glPopMatrix(); /* Outside of rotation to draw flat planes */
+    glPushMatrix(); /* Draw barriers */
+
+    if (banner_texture != 0)
+    {
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, banner_texture);
+        glBegin(GL_QUADS);
+        glTexCoord2i(1, 0); glVertex3d(-LANE_WIDTH/2.0+0.01,   0, 0);
+        glTexCoord2i(0, 0); glVertex3d(-LANE_WIDTH/2.0+0.01,   0, ROAD_LENGHT);
+        glTexCoord2i(0, 1); glVertex3d(-LANE_WIDTH/2.0+0.01, 2.5, ROAD_LENGHT);
+        glTexCoord2i(1, 1); glVertex3d(-LANE_WIDTH/2.0+0.01, 2.5, 0);
+
+        glTexCoord2i(0, 0); glVertex3d(lanes*LANE_WIDTH-LANE_WIDTH/2.0-0.01,   0, 0);
+        glTexCoord2i(1, 0); glVertex3d(lanes*LANE_WIDTH-LANE_WIDTH/2.0-0.01,   0, ROAD_LENGHT);
+        glTexCoord2i(1, 1); glVertex3d(lanes*LANE_WIDTH-LANE_WIDTH/2.0-0.01, 2.5, ROAD_LENGHT);
+        glTexCoord2i(0, 1); glVertex3d(lanes*LANE_WIDTH-LANE_WIDTH/2.0-0.01, 2.5, 0);
+        glEnd();
+        glDisable(GL_TEXTURE_2D);
+
+        glBegin(GL_QUADS);
+        glVertex3d(-LANE_WIDTH/2.0,   0, ROAD_LENGHT);
+        glVertex3d(-LANE_WIDTH/2.0, 2.5, ROAD_LENGHT);
+        glVertex3d(-LANE_WIDTH/2.0, 2.5, 0);
+        glVertex3d(-LANE_WIDTH/2.0,   0, 0);
+        glVertex3d(lanes*LANE_WIDTH-LANE_WIDTH/2.0,   0, ROAD_LENGHT);
+        glVertex3d(lanes*LANE_WIDTH-LANE_WIDTH/2.0, 2.5, ROAD_LENGHT);
+        glVertex3d(lanes*LANE_WIDTH-LANE_WIDTH/2.0, 2.5, 0);
+        glVertex3d(lanes*LANE_WIDTH-LANE_WIDTH/2.0,   0, 0);
+        glEnd();
+    }
+    else
+    {
+        glColor3ub(233, 255, 0);
+        glBegin(GL_QUADS);
+        glVertex3d(-LANE_WIDTH/2.0,   0, ROAD_LENGHT);
+        glVertex3d(-LANE_WIDTH/2.0, 2.5, ROAD_LENGHT);
+        glVertex3d(-LANE_WIDTH/2.0, 2.5, 0);
+        glVertex3d(-LANE_WIDTH/2.0,   0, 0);
+        glVertex3d(lanes*LANE_WIDTH-LANE_WIDTH/2.0,   0, ROAD_LENGHT);
+        glVertex3d(lanes*LANE_WIDTH-LANE_WIDTH/2.0, 2.5, ROAD_LENGHT);
+        glVertex3d(lanes*LANE_WIDTH-LANE_WIDTH/2.0, 2.5, 0);
+        glVertex3d(lanes*LANE_WIDTH-LANE_WIDTH/2.0,   0, 0);
+        glEnd();
+    }
+
+    glPopMatrix();
+}
+
+void draw_wheel(double distance)
+{
+    const double radius = 1;
+
+    glPushMatrix();
+    glRotated(90, 0, 1, 0);
+    glRotated((distance * 180.0)/(radius * M_PI), 0, 0, 1);
+
+    draw_cylinder(1, 1, 0.2, 0.8); // Wheel
+    draw_cylinder(0.1, 0.1, 0.4, 0); // Axel
+    draw_cylinder(0.1, 0.1, 0.4, 0); // Axel
+
+    for (int a = 0; a < 360; a += (360/7)) // Spokes
+    {
+        glPushMatrix();
+        glRotated(a, 0, 0, 1);
+        glTranslated(0, 0.4, 0);
+        draw_cuboid(0.1, 0.8, 0.1);
+        glPopMatrix();
+    }
+
     glPopMatrix();
 }
 
 void draw_soapbox(Car *car)
 {
+    GLUquadric* quad = gluNewQuadric();
     glPushMatrix();
-    glColor3ub(255, 255, 255);
-    draw_cuboid(1, 1, 1);
+
+    glColor3ub(200, 255, 255);
+
+    glTranslated(0, 1, 0);
+
+    draw_cuboid(2, 0.1, 2); // back chassis body cuboid
+
+    glPushMatrix();
+    glTranslated(1.2, 0, 0);
+    draw_wheel(car->pos); // back wheel 1
     glPopMatrix();
+    glPushMatrix();
+    glTranslated(-1.2, 0, 0);
+    draw_wheel(car->pos); // back wheel 2
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(0, 0, 2);
+    draw_cuboid(1, 0.1, 2); // front chassis body cuboid
+    glTranslated(0, 0, 1.7);
+    glPushMatrix();
+    glTranslated(0.3, 0, 0);
+    draw_cuboid(0.2, 0.1, 1.4); // front chassis wheel connector 1
+    glPopMatrix();
+    glPushMatrix();
+    glTranslated(-0.3, 0, 0);
+    draw_cuboid(0.2, 0.1, 1.4); // front chassis wheel connector 2
+    glPopMatrix();
+    glTranslated(0, 0, 0.5);
+    draw_wheel(car->pos);  // front wheel
+    glPopMatrix();
+
+    glPushMatrix();
+    glRotated(270, 1, 0, 0);
+    glTranslated(0, 0, 0.45);
+    draw_cylinder(0.5, 0.3, 1, 0);  // Chair bottom
+    glTranslated(0, 0, 0.55);
+    draw_cylinder(0.8, 0.8, 0.1, 0);  // Chair bottom
+    glPopMatrix();
+
+    glPushMatrix();
+    glColor3ub(200, 200, 200);
+
+    glRotated(-90, 0, 1, 0);
+    glRotated(-90, 1, 0, 0);
+    glTranslatef(-1.5, 0, 0);
+    glScaled(0.75, 0.75, 0.75);
+
+    Vect3f ctrlpoints[4][6] = {
+            {
+                    {10.0, 0.0, 0.0},
+                    {8.0, 1.0, 0.0},
+                    {6.0, 2.0, 0.0},
+                    {4.0, 3.0, 0.0},
+                    {0.0, 3.0, 0.0},
+                    {0.0, 0.0, 0.0},
+            },
+            {
+                    {10.0, 0.0, 0.2},
+                    {8.0, 1.0, 1.0},
+                    {6.0, 2.0, 1.0},
+                    {4.0, 3.0, 1.0},
+                    {0.0, 3.0, 1.0},
+                    {0.0, 0.0, 1.0},
+            },
+            {
+                    {10.0, 0.0, 0.4},
+                    {8.0, 0.0, 2.0},
+                    {6.0, 2.0, 2.0},
+                    {4.0, 3.0, 2.0},
+                    {0.0, 3.0, 2.0},
+                    {0.0, 0.0, 2.0},
+            },
+            {
+                    {10.0, 0.0, 0.6},
+                    {6.222, 0.25, 3.0},
+                    {3.333, -0.7, 3.0},
+                    {3.0, 1.3, 3.0},
+                    {0.0, 1.5, 3.0},
+                    {0.0, 0.0, 3.0},
+            }
+    };
+    glMap2f(GL_MAP2_VERTEX_3, 0, 1, 3, 6, 0, 1, 3*6, 4, &ctrlpoints[0][0].x);
+
+    glEnable(GL_MAP2_VERTEX_3);
+    glMapGrid2f(20, 0.0, 1.0, 20, 0.0, 1.0);
+    glEvalMesh2(GL_FILL, 0, 20, 0, 20);
+    glScaled(1, -1, 1);
+    glMapGrid2f(20, 0.0, 1.0, 20, 0.0, 1.0);
+    glEvalMesh2(GL_FILL, 0, 20, 0, 20);
+    glDisable(GL_MAP2_VERTEX_3);
+    glPopMatrix();
+
+    glPopMatrix();
+    gluDeleteQuadric(quad);
 }
 
 void draw_model(Car* car)
@@ -239,15 +383,38 @@ void draw_model(Car* car)
     glPopMatrix();
 }
 
-void draw_lamp(float* pos, bool on)
+void draw_lamp(GLenum id)
 {
     glPushMatrix();
     glPushAttrib(GL_LIGHTING_BIT); /* For material */
 
-    glTranslatef(pos[0], pos[1], pos[2]);
-    float color[] = {1, 0.9, 0.01, 1};
-    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, color);
-    if (on) glMaterialfv(GL_FRONT, GL_EMISSION, color);
+    GLenum type;
+    switch (id)
+    {
+        case GL_LIGHT0:
+            glTranslatef(SETTINGS.light0Pos.x, SETTINGS.light0Pos.y, SETTINGS.light0Pos.z);
+            type = GL_AMBIENT;
+            break;
+        case GL_LIGHT1:
+            glTranslatef(SETTINGS.light1Pos.x, SETTINGS.light1Pos.y, SETTINGS.light1Pos.z);
+            type = GL_DIFFUSE;
+            break;
+        case GL_LIGHT2:
+            glTranslatef(SETTINGS.light2Pos.x, SETTINGS.light2Pos.y, SETTINGS.light2Pos.z);
+            type = GL_DIFFUSE;
+            break;
+        case GL_LIGHT3:
+            glTranslatef(SETTINGS.light3Pos.x, SETTINGS.light3Pos.y, SETTINGS.light3Pos.z);
+            type = GL_SPECULAR;
+            break;
+        default:
+            abort();
+    }
+    float data[4];
+    glGetLightfv(id, type, data);
+    data[4] = 1.0;
+    glColor3fv(data);
+    if (glIsEnabled(id)) glMaterialfv(GL_FRONT, GL_EMISSION, data);
     if (SETTINGS.wireframe) glutWireSphere(1, 16, 16); else glutSolidSphere(1, 16, 16);
 
     glPopAttrib(); /* GL_LIGHTING_BIT */

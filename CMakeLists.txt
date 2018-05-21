@@ -47,5 +47,5 @@ add_executable(zeepkist
         zeepkist/stl.c zeepkist/stl.h
         zeepkist/input.c zeepkist/input.h
         zeepkist/text.c zeepkist/text.h
-        )
+        zeepkist/textures.c zeepkist/textures.h)
 target_link_libraries(zeepkist m ${OPENGL_LIBRARY} ${GLUT_LIBRARY})

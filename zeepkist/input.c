@@ -30,11 +30,11 @@ void keyboard(unsigned char key, int x, int y)
 
     switch (key)
     {
-        case 'P': case 'p': SETTINGS.move = !SETTINGS.move; break;
-        case '1': case '&': SETTINGS.light0 = !SETTINGS.light0; break;
-        case '2': /*case 'é':*/ SETTINGS.light1 = !SETTINGS.light1; break;
-        case '3': case '"': SETTINGS.light2 = !SETTINGS.light2; break;
-        case '4': case '\'': SETTINGS.light3 = !SETTINGS.light3; break;
+        case 'p': case 'P': SETTINGS.move = !SETTINGS.move; break;
+        case '1': SETTINGS.light0 = !SETTINGS.light0; break;
+        case '2': SETTINGS.light1 = !SETTINGS.light1; break;
+        case '3': SETTINGS.light2 = !SETTINGS.light2; break;
+        case '4': SETTINGS.light3 = !SETTINGS.light3; break;
 
         default: return;
     }
