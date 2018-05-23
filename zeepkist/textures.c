@@ -1,5 +1,13 @@
 #include "textures.h"
 
+/**
+ * Contains texture helpers
+ * Mostly based off this:
+ *
+ * http://www.opengl-tutorial.org/beginners-tutorials/tutorial-5-a-textured-cube/
+ */
+
+
 uint textures_load(const char *filename)
 {
     /* Data read from the header of the BMP file */

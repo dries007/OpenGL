@@ -6,12 +6,13 @@
 #include "globals.h"
 
 /* Get normally distributed double. See function header for attribution. */
-static double randn(double mu, double sigma);
+double randn(double mu, double sigma);
+
+void reshape(int w, int h);
 
 /* Private functions for callbacks */
 static void idle(void);
 static void display(void);
-static void reshape(int w, int h);
 
 /* Private globals */
 static Model * tesla;
@@ -245,7 +246,7 @@ static void display()
 /**
  * Window reshape callback
  */
-static void reshape(int w, int h)
+void reshape(int w, int h)
 {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -277,8 +278,6 @@ static void reshape(int w, int h)
  */
 int main(int argc, char** argv)
 {
-    // todo : parse args for default settings?
-
     /* initialize random seed: */
     srand(time(NULL));
 
@@ -296,9 +295,6 @@ int main(int argc, char** argv)
     SETTINGS.cars = calloc(SETTINGS.nCars, sizeof(Car));
     for (int i = 0; i < SETTINGS.nCars; i++)
     {
-        SETTINGS.cars[i].draw = draw_soapbox;
-        SETTINGS.cars[i].drawing_data = NULL;
-
         SETTINGS.cars[i].finished = false;
         SETTINGS.cars[i].pos = (float) (rand() % (int)ROAD_LENGHT);
         SETTINGS.cars[i].speed = 0;
@@ -312,6 +308,11 @@ int main(int argc, char** argv)
         {
             SETTINGS.cars[i].draw = draw_model;
             SETTINGS.cars[i].drawing_data = tesla;
+        }
+        else
+        {
+            SETTINGS.cars[i].draw = draw_soapbox;
+            SETTINGS.cars[i].drawing_data = NULL;
         }
     }
 

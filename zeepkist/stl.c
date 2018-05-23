@@ -1,5 +1,10 @@
 #include "stl.h"
 
+/**
+ *  WARNING
+ *  HERE BE DRAGONS
+ */
+
 #define STL_HEADER_SIZE 80
 #define STL_FACET_SIZE (4*3*4+2)
 

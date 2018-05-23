@@ -1,5 +1,10 @@
 #include "text.h"
 
+/**
+ *  WARNING
+ *  HERE BE DRAGONS
+ */
+
 void* font = GLUT_BITMAP_9_BY_15;
 int font_line_height = 15;
 

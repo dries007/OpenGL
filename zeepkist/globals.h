@@ -108,7 +108,7 @@ typedef struct {
  * GLOBALS
  */
 
-/* Defined in main.c */
+/* Variables defined in main.c */
 extern const float ROAD_LENGHT;
 extern const float LANE_WIDTH;
 extern Camera CAMERA;
@@ -122,6 +122,11 @@ extern Vect4f M_CHROME[3];
 extern Vect4f M_BRONS[3];
 extern Vect4f M_GEEL[3];
 extern Vect4f M_LILA[3];
+
+/* Functions defined in main.c */
+
+double randn(double mu, double sigma);
+void reshape(int w, int h);
 
 /*
  * PROJECT INCLUDES
