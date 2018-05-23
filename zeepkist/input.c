@@ -28,6 +28,7 @@ static bool handle_move(unsigned char key, int modifiers, int x, int y);
  *  - 7: Toggle flat/smooth shading
  *  - 8, 9, 0: Change colors of Arch, Body, Chassis
  *  - SPACE: Start (or pause) the race
+ *  - SHIFT+SPACE: Reset race
  *  - r/R: Shininess +- 5
  *  - t/T: Add/remove cars
  *  - o/O: Transparency
@@ -68,10 +69,20 @@ void keyboard(unsigned char key, int x, int y)
         case '0': SETTINGS.colorChassis = SETTINGS.colorChassis != M_CHROME ? M_CHROME : M_BRONS; break;
 
         /* Toggle 'race' feature (movement) */
-        case ' ': SETTINGS.move = !SETTINGS.move; break;
+        case ' ':
+            if ((modifiers & GLUT_ACTIVE_SHIFT))
+            {
+                for (int i = 0; i < SETTINGS.nCars; ++i)
+                {
+                    SETTINGS.cars[i].pos = 0;
+                    SETTINGS.cars[i].finished = true;
+                }
+            }
+            SETTINGS.move = !SETTINGS.move;
+            break;
 
         /* Shininess */
-        case 'r': SETTINGS.shininess += ((modifiers & GLUT_ACTIVE_SHIFT) ? -5 : 5); break;
+        case 'r': SETTINGS.shininess += ((modifiers & GLUT_ACTIVE_SHIFT) ? -.5 : .5); break;
 
         /* Add/Remove cars */
         case 't':
