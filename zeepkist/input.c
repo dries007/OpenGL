@@ -18,7 +18,19 @@ static bool handle_move(unsigned char key, int modifiers, int x, int y);
 
 /* Public (GLUT callback) functions */
 
-/* 'normal' keyboard key */
+/**
+ * 'normal' keyboard key
+ *
+ * Keymap:
+ *  - 1-4: Toggle lights 1-4
+ *  - 5: Toggle wireframe mode
+ *  - 6: Toggle bezier drawing mode
+ *  - 7: Toggle flat/smooth shading
+ *  - 8, 9, 0: Change colors of Arch, Body, Chassis
+ *  - SPACE: Start (or pause) the race
+ *  - r/R: Shininess +- 5
+ *  - t/T: add/remove cars
+ */
 void keyboard(unsigned char key, int x, int y)
 {
     int modifiers = glutGetModifiers();
@@ -26,18 +38,61 @@ void keyboard(unsigned char key, int x, int y)
     if (key < 0x20 && modifiers & GLUT_ACTIVE_CTRL) key |= 0x60;
     if (isupper(key)) key = tolower(key);
 
+    /* If key was handled via motion functions, return.
+     * See function header for which keys can no longer be used. */
     if (handle_move(key, modifiers, x, y)) return;
 
     switch (key)
     {
-        case 'p': case 'P': SETTINGS.move = !SETTINGS.move; break;
+        default: return; /* No need to re-draw if unknown key. */
+        case 27: exit(0); /* Escape */
+
+        /* Toggle Lights */
         case '1': SETTINGS.light0 = !SETTINGS.light0; break;
         case '2': SETTINGS.light1 = !SETTINGS.light1; break;
         case '3': SETTINGS.light2 = !SETTINGS.light2; break;
         case '4': SETTINGS.light3 = !SETTINGS.light3; break;
 
-        default: return;
+        /* Rendering settings */
+        case '5': SETTINGS.debug = !SETTINGS.debug; break;
+        case '6': SETTINGS.bezierMode = SETTINGS.bezierMode == GL_FILL ? GL_LINE : GL_FILL; break;
+        case '7': SETTINGS.flat = !SETTINGS.flat; break;
+
+        /* Color pickers */
+        case '8': SETTINGS.colorArch = SETTINGS.colorArch != M_GEEL ? M_GEEL : M_LILA; break;
+        case '9': SETTINGS.colorBody = SETTINGS.colorBody != M_GRIJS ? M_GRIJS : M_WITACHTIG; break;
+        case '0': SETTINGS.colorChassis = SETTINGS.colorChassis != M_CHROME ? M_CHROME : M_BRONS; break;
+
+        /* Toggle 'race' feature (movement) */
+        case ' ': SETTINGS.move = !SETTINGS.move; break;
+
+        /* Shininess */
+        case 'r': SETTINGS.shininess += ((modifiers & GLUT_ACTIVE_SHIFT) ? -5 : 5); break;
+
+        /* Add/Remove cars */
+        case 't':
+        {
+            int delta = ((modifiers & GLUT_ACTIVE_SHIFT) ? -1 : 1);
+            if (SETTINGS.nCars < 1 && delta < 0) break; /* 1 car min. */
+            SETTINGS.nCars += delta;
+            SETTINGS.cars = realloc(SETTINGS.cars, SETTINGS.nCars * sizeof(Car));
+            for (size_t i = SETTINGS.nCars - delta; i < SETTINGS.nCars; i++)
+            {
+                SETTINGS.cars[i].draw = draw_soapbox;
+                SETTINGS.cars[i].drawing_data = NULL;
+
+                SETTINGS.cars[i].finished = false;
+                SETTINGS.cars[i].pos = (float) (rand() % (int)ROAD_LENGHT);
+                SETTINGS.cars[i].speed = 0;
+                SETTINGS.cars[i].acceleration = 0;
+
+                SETTINGS.cars[i].max_speed = 5;
+                SETTINGS.cars[i].max_acceleration = 1;
+                SETTINGS.cars[i].power = .1;
+            }
+        }
     }
+
     glutPostRedisplay();
 }
 
@@ -148,6 +203,18 @@ static void move_camera(double forwards, double strafe, double yaw, double pitch
     glutPostRedisplay();
 }
 
+/**
+ * Keys used by movement:
+ * AZERTY:
+ * - Move head: ae (rotate) zsqd (move) fc (tilt) -> relative
+ * - Move head: ijkl (move) hn (up-down) -> absolute
+ * QWERTY:
+ * - Move head: eq (rotate) wasd (move) fc (tilt) -> relative
+ * - Move head: ijkl (move) hn (up-down) -> absolute
+ * ABSOLUTE:
+ * - Move head: xyz (absolute)
+ * - Move target: uvw (absolute)
+ */
 static bool handle_move(unsigned char key, int modifiers, int x, int y)
 {
     double delta = 1;

@@ -18,5 +18,6 @@ void draw_soapbox(Car *car);
 void draw_model(Car* car);
 void draw_lamp(GLenum id);
 void draw_wheel(double distance);
+void draw_arch(float d);
 
 #endif //OPENGL_DRAW_H

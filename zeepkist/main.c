@@ -17,9 +17,6 @@ static void reshape(int w, int h);
 static Model * tesla;
 static uint banners;
 
-static size_t n_cars;
-static Car* cars;
-
 /* Globals definitions. They are declared in globals.h */
 const float ROAD_LENGHT = 100;
 const float LANE_WIDTH = 5;
@@ -42,10 +39,16 @@ Window WINDOW = {
         1000, 600
 };
 
+/*                       Ambient          Diffuse          Specular       */
+Vect4f M_GRIJS[3] =     {{.22, .22, .22, 1.0}, {.33, .33, .33, 1.0}, {.11, .11, .11, 1.0}};
+Vect4f M_WITACHTIG[3] = {{.66, .66, .66, 1.0}, {.77, .77, .77, 1.0}, {.55, .55, .55, 1.0}};
+Vect4f M_CHROME[3] =    {{.46, .58, .35, 1.0}, {.23, .29, .17, 1.0}, {.69, .87, .52, 1.0}};
+Vect4f M_BRONS[3] =     {{.21, .13, .10, 1.0}, {.39, .27, .17, 1.0}, {.71, .43, .18, 1.0}};
+Vect4f M_GEEL[3] =      {{.65, .55, .15, 1.0}, {.75, .45, .15, 1.0}, {.85, .35, .15, 1.0}};
+Vect4f M_LILA[3] =      {{.45, .15, .75, 1.0}, {.55, .15, .65, 1.0}, {.35, .15, .85, 1.0}};
+
 Settings SETTINGS = {
-        false, /* Wireframe */
-        false, /* Flat shading */
-        true, /* Debug Lights */
+        false, /* Debug mode (wireframe etc) */
         true, /* Light 0 */
         true, /* Light 2 */
         true, /* Light 3 */
@@ -54,12 +57,17 @@ Settings SETTINGS = {
         {-10.0f, 10.0f, -25.0f, 1.0f}, /* Light 1 */
         { 10.0f, 10.0f,  25.0f, 1.0f}, /* Light 1 */
         {-10.0f, 10.0f,  25.0f, 1.0f}, /* Light 3 */
-        64, /* Shininess */
-        false, /* Debug Axis */
-        true, /* Debug LookAt */
+        false, /* Flat shading */
+        10, /* Shininess */
         true, /* Draw overlay */
         false, /* Move */
+        GL_FILL, /* Bezier mode */
+        M_GEEL, /* Color Arch */
+        M_GRIJS, /* Color Chassis */
+        M_CHROME, /* Color Body */
 };
+
+
 
 /* Callback function definitions */
 
@@ -73,36 +81,42 @@ static void idle()
 
     bool allFinished = true;
 
-    for (int i = 0; i < n_cars; i++)
+    for (int i = 0; i < SETTINGS.nCars; i++)
     {
-        if (cars[i].finished) continue;
+        if (SETTINGS.cars[i].finished) continue;
 
         allFinished = false;
-        cars[i].pos += cars[i].speed;
-        cars[i].speed += cars[i].acceleration;
-        cars[i].acceleration += cars[i].power;
+        SETTINGS.cars[i].pos += SETTINGS.cars[i].speed;
+        SETTINGS.cars[i].speed += SETTINGS.cars[i].acceleration;
+        SETTINGS.cars[i].acceleration += SETTINGS.cars[i].power;
 
-        if (cars[i].pos > ROAD_LENGHT)
+        if (SETTINGS.cars[i].pos > ROAD_LENGHT)
         {
-            cars[i].pos = ROAD_LENGHT;
-            cars[i].finished = true;
+            SETTINGS.cars[i].pos = ROAD_LENGHT;
+            SETTINGS.cars[i].finished = true;
         }
-        if (cars[i].speed > cars[i].max_speed) cars[i].speed = cars[i].max_speed;
-        if (cars[i].acceleration > cars[i].max_acceleration) cars[i].acceleration = cars[i].max_acceleration;
+        if (SETTINGS.cars[i].speed > SETTINGS.cars[i].max_speed) SETTINGS.cars[i].speed = SETTINGS.cars[i].max_speed;
+        if (SETTINGS.cars[i].acceleration > SETTINGS.cars[i].max_acceleration) SETTINGS.cars[i].acceleration = SETTINGS.cars[i].max_acceleration;
     }
 
     if (allFinished)
     {
-        for (int i = 0; i < n_cars; i++)
+        for (int i = 0; i < SETTINGS.nCars; i++)
         {
-            cars[i].finished = false;
-            cars[i].pos = 0;
-            cars[i].speed = 0;
-            cars[i].acceleration = 0;
+            SETTINGS.cars[i].finished = false;
+            SETTINGS.cars[i].pos = 0;
+            SETTINGS.cars[i].speed = 0;
+            SETTINGS.cars[i].acceleration = 0;
 
-            cars[i].max_speed = 0.01 + fabs(randn(0.1, 0.5));
-            cars[i].max_acceleration = 0.001 + fabs(randn(0.01, 0.05));
-            cars[i].power = 0.0001 + fabs(randn(0.001, 0.005));
+            SETTINGS.cars[i].max_speed = 0.01 + fabs(randn(0.1, 0.5));
+            SETTINGS.cars[i].max_acceleration = 0.001 + fabs(randn(0.01, 0.05));
+            SETTINGS.cars[i].power = 0.0001 + fabs(randn(0.001, 0.005));
+
+            if (tesla != NULL && rand() % 10 == 0)
+            {
+                SETTINGS.cars[i].draw = draw_model;
+                SETTINGS.cars[i].drawing_data = tesla;
+            }
         }
     }
 
@@ -149,33 +163,32 @@ static void display()
     glDisable(GL_LIGHTING); /* Disabled for drawing debug symbols */
 
     /* Draw debug stuff */
-    if (SETTINGS.debug_axis) draw_axis(50);
-
-    if (SETTINGS.debug_lookat && CAMERA.type == CAM_TYPE_ABSOLUTE)
+    if (SETTINGS.debug)
     {
-        glPushMatrix();
-        glTranslated(CAMERA.target.x, CAMERA.target.y, CAMERA.target.z);
-        glPushAttrib(GL_LINE_BIT);
-        glLineWidth(3);
-        draw_axis(1);
-        glPopAttrib(); /* GL_LINE_BIT */
-        glPopMatrix();
-    }
+        draw_axis(50);
 
-    if (SETTINGS.debug_lights)
-    {
-        glPushAttrib(GL_LINE_BIT);
-        glLineWidth(3);
+        if (CAMERA.type == CAM_TYPE_ABSOLUTE)
+        {
+            glPushMatrix();
+            glTranslated(CAMERA.target.x, CAMERA.target.y, CAMERA.target.z);
+            glPushAttrib(GL_LINE_BIT);
+            glLineWidth(3);
+            draw_axis(1);
+            glPopAttrib(); /* GL_LINE_BIT */
+            glPopMatrix();
+        }
+
         if (SETTINGS.light0) draw_axis_at((float*) &SETTINGS.light0Pos, 0.5);
         if (SETTINGS.light1) draw_axis_at((float*) &SETTINGS.light1Pos, 0.5);
         if (SETTINGS.light2) draw_axis_at((float*) &SETTINGS.light2Pos, 0.5);
         if (SETTINGS.light3) draw_axis_at((float*) &SETTINGS.light3Pos, 0.5);
-        glPopAttrib(); /* GL_LINE_BIT */
     }
 
     /* Start non-debug stuff */
 
     glEnable(GL_LIGHTING);
+
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, SETTINGS.shininess);
 
     if (SETTINGS.light0) glEnable(GL_LIGHT0); else glDisable(GL_LIGHT0);
     if (SETTINGS.light1) glEnable(GL_LIGHT1); else glDisable(GL_LIGHT1);
@@ -189,15 +202,15 @@ static void display()
 
     glPushMatrix();
 
-    glTranslated(LANE_WIDTH / 2.0 + (n_cars * LANE_WIDTH) / -2.0, 0, -ROAD_LENGHT / 2.0);
+    glTranslated(LANE_WIDTH / 2.0 + (SETTINGS.nCars * LANE_WIDTH) / -2.0, 0, -ROAD_LENGHT / 2.0);
 
-    draw_road(n_cars, banners);
+    draw_road(SETTINGS.nCars, banners);
 
-    for (int i = 0; i < n_cars; i++)
+    for (int i = 0; i < SETTINGS.nCars; i++)
     {
         glPushMatrix();
-        glTranslatef(i * LANE_WIDTH, 0, cars[i].pos);
-        cars[i].draw(&cars[i]);
+        glTranslatef(i * LANE_WIDTH, 0, SETTINGS.cars[i].pos);
+        SETTINGS.cars[i].draw(&SETTINGS.cars[i]);
         glPopMatrix();
     }
 
@@ -259,27 +272,27 @@ int main(int argc, char** argv)
 
     banners = textures_load("banners.bmp");
 
-    n_cars = 3;
-    cars = calloc(n_cars, sizeof(Car));
-    for (int i = 0; i < n_cars; i++)
+    SETTINGS.nCars = 3;
+    SETTINGS.cars = calloc(SETTINGS.nCars, sizeof(Car));
+    for (int i = 0; i < SETTINGS.nCars; i++)
     {
-        cars[i].draw = draw_soapbox;
-        cars[i].drawing_data = NULL;
+        SETTINGS.cars[i].draw = draw_soapbox;
+        SETTINGS.cars[i].drawing_data = NULL;
 
-        cars[i].finished = false;
-        cars[i].pos = (float) (rand() % (int)ROAD_LENGHT);
-        cars[i].speed = 0;
-        cars[i].acceleration = 0;
+        SETTINGS.cars[i].finished = false;
+        SETTINGS.cars[i].pos = (float) (rand() % (int)ROAD_LENGHT);
+        SETTINGS.cars[i].speed = 0;
+        SETTINGS.cars[i].acceleration = 0;
 
-        cars[i].max_speed = 0.01 + fabs(randn(0.1, 0.5));
-        cars[i].max_acceleration = 0.001 + fabs(randn(0.01, 0.05));
-        cars[i].power = 0.0001 + fabs(randn(0.001, 0.005));
-    }
+        SETTINGS.cars[i].max_speed = 0.01 + fabs(randn(0.1, 0.5));
+        SETTINGS.cars[i].max_acceleration = 0.001 + fabs(randn(0.01, 0.05));
+        SETTINGS.cars[i].power = 0.0001 + fabs(randn(0.001, 0.005));
 
-    if (tesla != NULL)
-    {
-        cars[0].draw = draw_model;
-        cars[0].drawing_data = tesla;
+        if (tesla != NULL && rand() % 10 == 0)
+        {
+            SETTINGS.cars[i].draw = draw_model;
+            SETTINGS.cars[i].drawing_data = tesla;
+        }
     }
 
     glClearColor(0.0, 0.0, 0.0, 0);

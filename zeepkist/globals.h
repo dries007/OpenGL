@@ -18,6 +18,7 @@
 #include <math.h>
 #include <time.h>
 #include <GL/glut.h>
+#include "stl.h"
 
 /*
  * TYPES
@@ -66,25 +67,6 @@ typedef struct {
     int width, height;
 } Window;
 
-typedef struct {
-    bool wireframe;
-    bool flat;
-    bool debug_lights;
-    bool light0;
-    bool light1;
-    bool light2;
-    bool light3;
-    Vect4f light0Pos;
-    Vect4f light1Pos;
-    Vect4f light2Pos;
-    Vect4f light3Pos;
-    float shininess;
-    bool debug_axis;
-    bool debug_lookat;
-    bool overlay;
-    bool move;
-} Settings;
-
 typedef struct car {
     void (*draw)(struct car*);
     void * drawing_data;
@@ -97,6 +79,28 @@ typedef struct car {
     bool finished;
 } Car;
 
+typedef struct {
+    bool debug;
+    bool light0;
+    bool light1;
+    bool light2;
+    bool light3;
+    Vect4f light0Pos;
+    Vect4f light1Pos;
+    Vect4f light2Pos;
+    Vect4f light3Pos;
+    bool flat;
+    float shininess;
+    bool overlay;
+    bool move;
+    GLenum bezierMode;
+    Vect4f* colorArch;
+    Vect4f* colorChassis;
+    Vect4f* colorBody;
+    size_t nCars;
+    Car* cars;
+} Settings;
+
 /*
  * GLOBALS
  */
@@ -108,6 +112,13 @@ extern Camera CAMERA;
 extern Perspective PERSPECTIVE;
 extern Window WINDOW;
 extern Settings SETTINGS;
+
+extern Vect4f M_GRIJS[3];
+extern Vect4f M_WITACHTIG[3];
+extern Vect4f M_CHROME[3];
+extern Vect4f M_BRONS[3];
+extern Vect4f M_GEEL[3];
+extern Vect4f M_LILA[3];
 
 /*
  * PROJECT INCLUDES

@@ -5,20 +5,20 @@ void draw_cuboid(double x, double y, double z)
 {
     glPushMatrix();
     glScaled(x, y, z);
-    if (SETTINGS.wireframe) glutWireCube(1);
+    if (SETTINGS.debug) glutWireCube(1);
     else glutSolidCube(1);
     glPopMatrix();
 }
 
 void draw_cylinder(double radius_bottom, double radius_top, double height, double radius_hole)
 {
-    const int roundness = 64;
+    const int roundness = 10;
     GLUquadric* quad = gluNewQuadric();
     glPushMatrix();
 
     glTranslated(0, 0, -height/2);
 
-    gluQuadricDrawStyle(quad, SETTINGS.wireframe ? GLU_LINE : GLU_FILL);
+    gluQuadricDrawStyle(quad, SETTINGS.debug ? GLU_LINE : GLU_FILL);
 
     gluDisk(quad, radius_hole, radius_bottom, (int) (roundness * radius_bottom), roundness); // Bottom
     gluCylinder(quad, radius_bottom, radius_top, height, (int) (roundness * (radius_bottom > radius_top ? radius_bottom : radius_top)), roundness); // Mantle
@@ -101,10 +101,12 @@ void draw_overlay()
             break;
         case CAM_TYPE_GAME_AZERTY:
             disp_printf(&cursorR, ALIGN_RIGHT, "Yaw: %4.2lf Pitch: %4.2lf\n", CAMERA.yaw, CAMERA.pitch);
+            disp_puts(&cursorR, ALIGN_RIGHT, "Mouse enabled\n");
             break;
 
         case CAM_TYPE_GAME_QWERTY:
             disp_printf(&cursorR, ALIGN_RIGHT, "Yaw: %4.2lf Pitch: %4.2lf\n", CAMERA.yaw, CAMERA.pitch);
+            disp_puts(&cursorR, ALIGN_RIGHT, "Mouse enabled\n");
             break;
     }
 
@@ -123,14 +125,25 @@ void draw_overlay()
         case CAM_TYPE_GAME_QWERTY: disp_puts(&cursorR, ALIGN_RIGHT, "Camera QWERTY mode\n"); break;
     }
 
-    if (SETTINGS.wireframe) disp_puts(&cursorR, ALIGN_RIGHT, "Wire mode\n");
-    else disp_puts(&cursorR, ALIGN_RIGHT, "Full mode\n");
+    if (SETTINGS.debug) disp_puts(&cursorR, ALIGN_RIGHT, "DEBUG drawing mode\n");
+
+    if (SETTINGS.bezierMode == GL_FILL) disp_puts(&cursorR, ALIGN_RIGHT, "Full bezier mode\n");
+    else disp_puts(&cursorR, ALIGN_RIGHT, "Line bezier mode\n");
 
     if (SETTINGS.flat) disp_puts(&cursorR, ALIGN_RIGHT, "Flat shading\n");
     else disp_puts(&cursorR, ALIGN_RIGHT, "Smooth shading\n");
 
+    disp_printf(&cursorR, ALIGN_RIGHT, "Colors: Arch=%s Body=%s Chassis=%s\n",
+                SETTINGS.colorArch == M_GEEL ? "geel" : "lila",
+                SETTINGS.colorBody == M_GRIJS ? "grijs" : "witachtig",
+                SETTINGS.colorChassis == M_CHROME ? "chrome" : "brons");
+
     if (SETTINGS.move) disp_puts(&cursorR, ALIGN_RIGHT, "Movement on\n");
     else disp_puts(&cursorR, ALIGN_RIGHT, "Movement off\n");
+
+    disp_printf(&cursorR, ALIGN_RIGHT, "Shininess: %f\n", SETTINGS.shininess);
+
+    disp_printf(&cursorR, ALIGN_RIGHT, "Cars: %d\n", (int) SETTINGS.nCars);
 
     if (CAMERA.type != CAM_TYPE_ABSOLUTE)
     {
@@ -198,6 +211,7 @@ void draw_road(size_t lanes, uint banner_texture)
     glPopMatrix(); /* Outside of rotation to draw flat planes */
     glPushMatrix(); /* Draw barriers */
 
+    glColor3ub(255, 255, 255);
     if (banner_texture != 0)
     {
         glEnable(GL_TEXTURE_2D);
@@ -228,7 +242,6 @@ void draw_road(size_t lanes, uint banner_texture)
     }
     else
     {
-        glColor3ub(233, 255, 0);
         glBegin(GL_QUADS);
         glVertex3d(-LANE_WIDTH/2.0,   0, ROAD_LENGHT);
         glVertex3d(-LANE_WIDTH/2.0, 2.5, ROAD_LENGHT);
@@ -242,6 +255,40 @@ void draw_road(size_t lanes, uint banner_texture)
     }
 
     glPopMatrix();
+    glPushMatrix();
+    glTranslatef(-LANE_WIDTH/2.0, 0.0, ROAD_LENGHT);
+    draw_arch(lanes * LANE_WIDTH);
+    glPopMatrix();
+}
+
+void draw_arch(float width)
+{
+    const float height = 10;
+
+    glPushMatrix();
+    glPushAttrib(GL_LIGHTING_BIT); /* For material */
+
+    glDisable(GL_COLOR_MATERIAL);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, (float *) &SETTINGS.colorArch[0]);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, (float *) &SETTINGS.colorArch[1]);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, (float *) &SETTINGS.colorArch[2]);
+
+    glTranslatef(-1, height/2.0, 1);
+    glRotated(-90, 1, 0, 0);
+
+    draw_cylinder(1, 1, height, 0);
+    glPushMatrix();
+    glTranslatef(width + 2, 0.0, 0.0);
+    draw_cylinder(1, 1, height, 0);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslatef(width/2.0 + 1.0, 0.0, height/2.0);
+    draw_cuboid(width + 4, 2, 2);
+    glPopMatrix();
+
+    glPopAttrib(); /* GL_LIGHTING_BIT */
+    glPopMatrix();
 }
 
 void draw_wheel(double distance)
@@ -249,13 +296,18 @@ void draw_wheel(double distance)
     const double radius = 1;
 
     glPushMatrix();
+    glPushAttrib(GL_LIGHTING_BIT); /* For material */
+
     glRotated(90, 0, 1, 0);
     glRotated((distance * 180.0)/(radius * M_PI), 0, 0, 1);
 
-    draw_cylinder(1, 1, 0.2, 0.8); // Wheel
     draw_cylinder(0.1, 0.1, 0.4, 0); // Axel
     draw_cylinder(0.1, 0.1, 0.4, 0); // Axel
 
+    glColor3ub(0, 0, 0);
+    draw_cylinder(1, 1, 0.2, 0.8); // Wheel
+
+    glColor3ub(200, 200, 200);
     for (int a = 0; a < 360; a += (360/7)) // Spokes
     {
         glPushMatrix();
@@ -265,6 +317,7 @@ void draw_wheel(double distance)
         glPopMatrix();
     }
 
+    glPopAttrib(); /* GL_LIGHTING_BIT */
     glPopMatrix();
 }
 
@@ -273,7 +326,12 @@ void draw_soapbox(Car *car)
     GLUquadric* quad = gluNewQuadric();
     glPushMatrix();
 
-    glColor3ub(200, 255, 255);
+    glPushAttrib(GL_LIGHTING_BIT); /* For material */
+
+    glDisable(GL_COLOR_MATERIAL);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, (float *) &SETTINGS.colorChassis[0]);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, (float *) &SETTINGS.colorChassis[1]);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, (float *) &SETTINGS.colorChassis[2]);
 
     glTranslated(0, 1, 0);
 
@@ -317,10 +375,10 @@ void draw_soapbox(Car *car)
 
     glRotated(-90, 0, 1, 0);
     glRotated(-90, 1, 0, 0);
-    glTranslatef(-1.5, 0, 0);
-    glScaled(0.75, 0.75, 0.75);
+    glTranslatef(-1.5, 0, -0.75);
+    glScaled(0.85, 0.9, 1);
 
-    Vect3f ctrlpoints[4][6] = {
+    static const Vect3f ctrlpoints[4][6] = {
             {
                     {10.0, 0.0, 0.0},
                     {8.0, 1.0, 0.0},
@@ -339,7 +397,7 @@ void draw_soapbox(Car *car)
             },
             {
                     {10.0, 0.0, 0.4},
-                    {8.0, 0.0, 2.0},
+                    {8.0, 0.0, 3.0},
                     {6.0, 2.0, 2.0},
                     {4.0, 3.0, 2.0},
                     {0.0, 3.0, 2.0},
@@ -347,24 +405,50 @@ void draw_soapbox(Car *car)
             },
             {
                     {10.0, 0.0, 0.6},
-                    {6.222, 0.25, 3.0},
-                    {3.333, -0.7, 3.0},
-                    {3.0, 1.3, 3.0},
+                    {6.0, 0.0, 3.0},
+                    {2.0, -0.25, 3.0},
+                    {2.0, 0.7, 3.0},
                     {0.0, 1.5, 3.0},
                     {0.0, 0.0, 3.0},
             }
     };
     glMap2f(GL_MAP2_VERTEX_3, 0, 1, 3, 6, 0, 1, 3*6, 4, &ctrlpoints[0][0].x);
 
+    if (SETTINGS.debug)
+    {
+        glPushAttrib(GL_LIGHTING_BIT); /* For material */
+        glDisable(GL_LIGHTING); /* debug mode engaged */
+        glPointSize(10);
+        glBegin(GL_POINTS);
+        const unsigned char debug_colors[4][3] = {
+                {255, 0, 0}, /* R */
+                {0, 255, 0}, /* G */
+                {0, 0, 255}, /* B */
+                {255, 255, 255}, /* W */
+        };
+        for (int i = 0; i < 4; ++i)
+        {
+            glColor3ubv(debug_colors[i]);
+            for (int j = 0; j < 6; ++j) glVertex3fv(&ctrlpoints[i][j].x);
+        }
+        glEnd();
+        glPopAttrib(); /* GL_LIGHTING_BIT */
+    }
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, (float *) &SETTINGS.colorBody[0]);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, (float *) &SETTINGS.colorBody[1]);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, (float *) &SETTINGS.colorBody[2]);
+
     glEnable(GL_MAP2_VERTEX_3);
     glMapGrid2f(20, 0.0, 1.0, 20, 0.0, 1.0);
-    glEvalMesh2(GL_FILL, 0, 20, 0, 20);
+    glEvalMesh2(SETTINGS.bezierMode, 0, 20, 0, 20);
     glScaled(1, -1, 1);
     glMapGrid2f(20, 0.0, 1.0, 20, 0.0, 1.0);
-    glEvalMesh2(GL_FILL, 0, 20, 0, 20);
+    glEvalMesh2(SETTINGS.bezierMode, 0, 20, 0, 20);
     glDisable(GL_MAP2_VERTEX_3);
     glPopMatrix();
 
+    glPopAttrib(); /* GL_LIGHTING_BIT */
     glPopMatrix();
     gluDeleteQuadric(quad);
 }
@@ -414,8 +498,8 @@ void draw_lamp(GLenum id)
     glGetLightfv(id, type, data);
     data[4] = 1.0;
     glColor3fv(data);
-    if (glIsEnabled(id)) glMaterialfv(GL_FRONT, GL_EMISSION, data);
-    if (SETTINGS.wireframe) glutWireSphere(1, 16, 16); else glutSolidSphere(1, 16, 16);
+    if (glIsEnabled(id)) glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, data);
+    if (SETTINGS.debug) glutWireSphere(1, 16, 16); else glutSolidSphere(1, 16, 16);
 
     glPopAttrib(); /* GL_LIGHTING_BIT */
     glPopMatrix();
