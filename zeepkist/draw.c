@@ -468,11 +468,26 @@ void draw_model(Car* car)
 
     glPushMatrix();
 
+    glPushAttrib(GL_LIGHTING_BIT); /* For material */
+
+    const static Vect4f colorAmbient  = {0.19225,    0.19225,    0.19225,    1.0};
+    const static Vect4f colorDiffuse  = {0.50754,    0.50754,    0.50754,    1.0};
+    const static Vect4f colorSpecular = {0.508273,   0.508273,   0.508273,   1.0};
+
+    glDisable(GL_COLOR_MATERIAL);
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, (float *) &colorAmbient);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, (float *) &colorDiffuse);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, (float *) &colorSpecular);
+
     glColor3ub(85, 3, 64); /* Midnight cherry */
+
     glTranslated(0, 1.25, 0);
     glScaled(0.05, 0.05, 0.05);
     glRotated(-90, 1, 0, 0);
     stlDisplayModel(car->drawing_data);
+
+    glPopAttrib(); /* GL_LIGHTING_BIT */
     glPopMatrix();
 }
 
