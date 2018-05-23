@@ -39,9 +39,9 @@ Window WINDOW = {
         1000, 600
 };
 
-/*                       Ambient          Diffuse          Specular       */
-Vect4f M_GRIJS[3] =     {{.22, .22, .22, 1.0}, {.33, .33, .33, 1.0}, {.11, .11, .11, 1.0}};
-Vect4f M_WITACHTIG[3] = {{.66, .66, .66, 1.0}, {.77, .77, .77, 1.0}, {.55, .55, .55, 1.0}};
+/*                       Ambient               Diffuse               Specular       */
+Vect4f M_GRIJS[3] =     {{.22, .22, .22, 0.7}, {.33, .33, .33, 0.7}, {.11, .11, .11, 0.7}};
+Vect4f M_WITACHTIG[3] = {{.66, .66, .66, 0.7}, {.77, .77, .77, 0.7}, {.55, .55, .55, 0.7}};
 Vect4f M_CHROME[3] =    {{.46, .58, .35, 1.0}, {.23, .29, .17, 1.0}, {.69, .87, .52, 1.0}};
 Vect4f M_BRONS[3] =     {{.21, .13, .10, 1.0}, {.39, .27, .17, 1.0}, {.71, .43, .18, 1.0}};
 Vect4f M_GEEL[3] =      {{.65, .55, .15, 1.0}, {.75, .45, .15, 1.0}, {.85, .35, .15, 1.0}};
@@ -63,11 +63,14 @@ Settings SETTINGS = {
         false, /* Move */
         GL_FILL, /* Bezier mode */
         M_GEEL, /* Color Arch */
-        M_GRIJS, /* Color Chassis */
-        M_CHROME, /* Color Body */
+        M_CHROME, /* Color Chassis */
+        M_GRIJS, /* Color Body */
+        0.3, /* Transparency */
+        0, /* nr of Cars */
+        NULL, /* Cars data */
+        20, /* Spot (light 3) Exp */
+        30, /* Spot (light 3) Cutoff */
 };
-
-
 
 /* Callback function definitions */
 
@@ -159,6 +162,23 @@ static void display()
     glLightfv(GL_LIGHT1, GL_POSITION, (float*) &SETTINGS.light1Pos);
     glLightfv(GL_LIGHT2, GL_POSITION, (float*) &SETTINGS.light2Pos);
     glLightfv(GL_LIGHT3, GL_POSITION, (float*) &SETTINGS.light3Pos);
+
+    glLightf(GL_LIGHT3, GL_SPOT_EXPONENT, SETTINGS.light3Exp);
+    glLightf(GL_LIGHT3, GL_SPOT_CUTOFF, SETTINGS.light3Cutoff);
+    /* Finish is at 0, 0, ROADLEN/2*/
+    float direction[] = {
+            -SETTINGS.light3Pos.x,
+            -SETTINGS.light3Pos.y,
+            ROAD_LENGHT/2.0 - SETTINGS.light3Pos.z,
+    };
+    glLightfv(GL_LIGHT3, GL_SPOT_DIRECTION, direction);
+
+    /*
+    glBegin(GL_LINES);
+    glVertex3f(0, 5, ROAD_LENGHT/2.0);
+    glVertex3fv(&SETTINGS.light3Pos.x);
+    glEnd();
+    */
 
     glDisable(GL_LIGHTING); /* Disabled for drawing debug symbols */
 

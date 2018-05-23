@@ -20,12 +20,12 @@ void draw_cylinder(double radius_bottom, double radius_top, double height, doubl
 
     gluQuadricDrawStyle(quad, SETTINGS.debug ? GLU_LINE : GLU_FILL);
 
-    gluDisk(quad, radius_hole, radius_bottom, (int) (roundness * radius_bottom), roundness); // Bottom
-    gluCylinder(quad, radius_bottom, radius_top, height, (int) (roundness * (radius_bottom > radius_top ? radius_bottom : radius_top)), roundness); // Mantle
+    gluDisk(quad, radius_hole, radius_bottom, (int) (roundness * radius_bottom), roundness); /* Bottom */
+    gluCylinder(quad, radius_bottom, radius_top, height, (int) (roundness * (radius_bottom > radius_top ? radius_bottom : radius_top)), roundness); /* Mantle */
     if (radius_hole != 0)
-        gluCylinder(quad, radius_hole, radius_hole, height, (int) (roundness * radius_hole), roundness); // Hole Mantle
+        gluCylinder(quad, radius_hole, radius_hole, height, (int) (roundness * radius_hole), roundness); /* Hole Mantle */
     glTranslated(0, 0, height);
-    gluDisk(quad, radius_hole, radius_top, (int) (roundness * radius_top), roundness); // Top
+    gluDisk(quad, radius_hole, radius_top, (int) (roundness * radius_top), roundness); /* Top */
     glTranslated(0, 0, -height);
 
     glPopMatrix();
@@ -144,6 +144,10 @@ void draw_overlay()
     disp_printf(&cursorR, ALIGN_RIGHT, "Shininess: %f\n", SETTINGS.shininess);
 
     disp_printf(&cursorR, ALIGN_RIGHT, "Cars: %d\n", (int) SETTINGS.nCars);
+
+    disp_printf(&cursorR, ALIGN_RIGHT, "Transparency: %0.2f\n", SETTINGS.transp);
+
+    disp_printf(&cursorR, ALIGN_RIGHT, "Spot: exp=%.1f cutoff=%.1f\n", SETTINGS.light3Exp, SETTINGS.light3Cutoff);
 
     if (CAMERA.type != CAM_TYPE_ABSOLUTE)
     {
@@ -301,14 +305,15 @@ void draw_wheel(double distance)
     glRotated(90, 0, 1, 0);
     glRotated((distance * 180.0)/(radius * M_PI), 0, 0, 1);
 
-    draw_cylinder(0.1, 0.1, 0.4, 0); // Axel
-    draw_cylinder(0.1, 0.1, 0.4, 0); // Axel
+    draw_cylinder(0.1, 0.1, 0.4, 0); /* Axel */
+    draw_cylinder(0.1, 0.1, 0.4, 0); /* Axel */
 
+    glEnable(GL_COLOR_MATERIAL);
     glColor3ub(0, 0, 0);
-    draw_cylinder(1, 1, 0.2, 0.8); // Wheel
+    draw_cylinder(1, 1, 0.2, 0.8); /* Wheel */
 
     glColor3ub(200, 200, 200);
-    for (int a = 0; a < 360; a += (360/7)) // Spokes
+    for (int a = 0; a < 360; a += (360/7)) /* Spokes */
     {
         glPushMatrix();
         glRotated(a, 0, 0, 1);
@@ -335,39 +340,39 @@ void draw_soapbox(Car *car)
 
     glTranslated(0, 1, 0);
 
-    draw_cuboid(2, 0.1, 2); // back chassis body cuboid
+    draw_cuboid(2, 0.1, 2); /* back chassis body cuboid */
 
     glPushMatrix();
     glTranslated(1.2, 0, 0);
-    draw_wheel(car->pos); // back wheel 1
+    draw_wheel(car->pos); /* back wheel 1 */
     glPopMatrix();
     glPushMatrix();
     glTranslated(-1.2, 0, 0);
-    draw_wheel(car->pos); // back wheel 2
+    draw_wheel(car->pos); /* back wheel 2 */
     glPopMatrix();
 
     glPushMatrix();
     glTranslated(0, 0, 2);
-    draw_cuboid(1, 0.1, 2); // front chassis body cuboid
+    draw_cuboid(1, 0.1, 2); /* front chassis body cuboid */
     glTranslated(0, 0, 1.7);
     glPushMatrix();
     glTranslated(0.3, 0, 0);
-    draw_cuboid(0.2, 0.1, 1.4); // front chassis wheel connector 1
+    draw_cuboid(0.2, 0.1, 1.4); /* front chassis wheel connector 1 */
     glPopMatrix();
     glPushMatrix();
     glTranslated(-0.3, 0, 0);
-    draw_cuboid(0.2, 0.1, 1.4); // front chassis wheel connector 2
+    draw_cuboid(0.2, 0.1, 1.4); /* front chassis wheel connector 2 */
     glPopMatrix();
     glTranslated(0, 0, 0.5);
-    draw_wheel(car->pos);  // front wheel
+    draw_wheel(car->pos);  /* front wheel */
     glPopMatrix();
 
     glPushMatrix();
     glRotated(270, 1, 0, 0);
     glTranslated(0, 0, 0.45);
-    draw_cylinder(0.5, 0.3, 1, 0);  // Chair bottom
+    draw_cylinder(0.5, 0.3, 1, 0);  /* Chair bottom */
     glTranslated(0, 0, 0.55);
-    draw_cylinder(0.8, 0.8, 0.1, 0);  // Chair bottom
+    draw_cylinder(0.8, 0.8, 0.1, 0);  /* Chair bottom */
     glPopMatrix();
 
     glPushMatrix();
@@ -429,8 +434,12 @@ void draw_soapbox(Car *car)
         for (int i = 0; i < 4; ++i)
         {
             glColor3ubv(debug_colors[i]);
-            for (int j = 0; j < 6; ++j) glVertex3fv(&ctrlpoints[i][j].x);
+            for (int j = 0; j < 6; ++j)
+            {
+                glVertex3fv(&ctrlpoints[i][j].x);
+            }
         }
+        glPointSize(1);
         glEnd();
         glPopAttrib(); /* GL_LIGHTING_BIT */
     }
@@ -459,7 +468,7 @@ void draw_model(Car* car)
 
     glPushMatrix();
 
-    glColor3ub(85, 3, 64); // Midnight cherry
+    glColor3ub(85, 3, 64); /* Midnight cherry */
     glTranslated(0, 1.25, 0);
     glScaled(0.05, 0.05, 0.05);
     glRotated(-90, 1, 0, 0);
@@ -499,7 +508,7 @@ void draw_lamp(GLenum id)
     data[4] = 1.0;
     glColor3fv(data);
     if (glIsEnabled(id)) glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, data);
-    if (SETTINGS.debug) glutWireSphere(1, 16, 16); else glutSolidSphere(1, 16, 16);
+    if (SETTINGS.debug) glutWireSphere(1, 16, 8); else glutSolidSphere(1, 16, 8);
 
     glPopAttrib(); /* GL_LIGHTING_BIT */
     glPopMatrix();

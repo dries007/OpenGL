@@ -97,8 +97,11 @@ typedef struct {
     Vect4f* colorArch;
     Vect4f* colorChassis;
     Vect4f* colorBody;
+    float transp;
     size_t nCars;
     Car* cars;
+    float light3Exp;
+    float light3Cutoff;
 } Settings;
 
 /*

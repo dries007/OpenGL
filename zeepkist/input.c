@@ -29,7 +29,11 @@ static bool handle_move(unsigned char key, int modifiers, int x, int y);
  *  - 8, 9, 0: Change colors of Arch, Body, Chassis
  *  - SPACE: Start (or pause) the race
  *  - r/R: Shininess +- 5
- *  - t/T: add/remove cars
+ *  - t/T: Add/remove cars
+ *  - o/O: Transparency
+ *  - g/G: Change spot height
+ *  - v/V: Change spot exponent
+ *  - b/B: Change spot cutoff
  */
 void keyboard(unsigned char key, int x, int y)
 {
@@ -90,7 +94,22 @@ void keyboard(unsigned char key, int x, int y)
                 SETTINGS.cars[i].max_acceleration = 1;
                 SETTINGS.cars[i].power = .1;
             }
+            break;
         }
+
+        /* Transparent bodywork */
+        case 'o':
+            SETTINGS.transp += ((modifiers & GLUT_ACTIVE_SHIFT) ? -0.1 : 0.1);
+            if (SETTINGS.transp < 0.1) SETTINGS.transp = 0.1;
+            if (SETTINGS.transp > 0.9) SETTINGS.transp = 0.9;
+            M_GRIJS[0].w = M_GRIJS[1].w = M_GRIJS[2].w = 1-SETTINGS.transp;
+            M_WITACHTIG[0].w = M_WITACHTIG[1].w = M_WITACHTIG[2].w = 1-SETTINGS.transp;
+            break;
+
+        /* Change spot settings */
+        case 'g': SETTINGS.light3Pos.y += ((modifiers & GLUT_ACTIVE_SHIFT) ? -0.25 : 0.25); break;
+        case 'v': SETTINGS.light3Exp += ((modifiers & GLUT_ACTIVE_SHIFT) ? -2.5 : 2.5); break;
+        case 'b': SETTINGS.light3Cutoff += ((modifiers & GLUT_ACTIVE_SHIFT) ? -5 : 5); break;
     }
 
     glutPostRedisplay();
