@@ -3,6 +3,11 @@
 
 #include "globals.h"
 
+/**
+ *  WARNING
+ *  HERE BE DRAGONS
+ */
+
 typedef enum { ALIGN_LEFT, ALIGN_CENTER, ALIGN_RIGHT } Align;
 
 extern void * font;

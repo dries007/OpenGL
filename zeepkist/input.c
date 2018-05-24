@@ -29,7 +29,7 @@ static bool handle_move(unsigned char key, int modifiers, int x, int y);
  *  - 8, 9, 0: Change colors of Arch, Body, Chassis
  *  - SPACE: Start (or pause) the race
  *  - SHIFT+SPACE: Reset race
- *  - r/R: Shininess +- 5
+ *  - r/R: Shininess
  *  - t/T: Add/remove cars
  *  - o/O: Transparency
  *  - g/G: Change spot height
@@ -126,9 +126,70 @@ void keyboard(unsigned char key, int x, int y)
     glutPostRedisplay();
 }
 
-/* 'special' keyboard key */
+/**
+ * 'special' keyboard key
+ *
+ * - F1: Toggle overlay
+ * - F2: Change perspective type
+ * - F3: Change camera mode
+ */
 void special(int key, int x, int y)
 {
+    switch (key)
+    {
+        default: return;
+
+        case GLUT_KEY_F1:
+            SETTINGS.overlay = !SETTINGS.overlay;
+            break;
+
+        case GLUT_KEY_F2:
+            switch (PERSPECTIVE.type)
+            {
+                case PERSP_TYPE_ORTHO:
+                    PERSPECTIVE.type = PERSP_TYPE_FRUSTUM;
+                    break;
+
+                case PERSP_TYPE_FRUSTUM:
+                    PERSPECTIVE.type = PERSP_TYPE_FOV;
+                    PERSPECTIVE.fov = 90;
+                    PERSPECTIVE.aspect = (double) WINDOW.width / WINDOW.height;
+                    break;
+
+                case PERSP_TYPE_FOV:
+                    PERSPECTIVE.type = PERSP_TYPE_ORTHO;
+                    PERSPECTIVE.left = -10;
+                    PERSPECTIVE.right = 10;
+                    PERSPECTIVE.bottom = -10;
+                    PERSPECTIVE.top = 10;
+                    break;
+            }
+            reshape(WINDOW.width, WINDOW.height);
+            break;
+
+        case GLUT_KEY_F3:
+            switch (CAMERA.type)
+            {
+                case CAM_TYPE_ABSOLUTE:
+                    CAMERA.type = CAM_TYPE_GAME_AZERTY;
+                    CAMERA.pitch = 0;
+                    CAMERA.yaw = 0;
+                    break;
+
+                case CAM_TYPE_GAME_AZERTY:
+                    CAMERA.type = CAM_TYPE_GAME_QWERTY;
+                    break;
+
+                case CAM_TYPE_GAME_QWERTY:
+                    CAMERA.type = CAM_TYPE_ABSOLUTE;
+                    CAMERA.target.x = 0;
+                    CAMERA.target.y = 0;
+                    CAMERA.target.z = 0;
+                    break;
+            }
+            break;
+    }
+
     glutPostRedisplay();
 }
 
@@ -263,9 +324,9 @@ static bool handle_move(unsigned char key, int modifiers, int x, int y)
                 case 'y': CAMERA.pos.y += delta; break;
                 case 'z': CAMERA.pos.z += delta; break;
 
-                case 'u': CAMERA.target.y += delta; break;
-                case 'v': CAMERA.target.x += delta; break;
-                case 'w': CAMERA.target.z += delta; break;
+                case 'j': CAMERA.target.x += delta; break;
+                case 'k': CAMERA.target.y += delta; break;
+                case 'l': CAMERA.target.z += delta; break;
             }
             glutPostRedisplay();
             break;

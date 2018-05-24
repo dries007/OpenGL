@@ -3,6 +3,11 @@
 
 /* Thank you Wikipedia for explaining how this format works. */
 
+/**
+ *  WARNING
+ *  HERE BE DRAGONS
+ */
+
 #include "globals.h"
 
 typedef struct {
