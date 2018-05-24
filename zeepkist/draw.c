@@ -476,7 +476,7 @@ void draw_model(Car* car)
 
     glDisable(GL_COLOR_MATERIAL);
 
-    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0.6);
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 76.8);
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, (float *) &colorAmbient);
     glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, (float *) &colorDiffuse);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, (float *) &colorSpecular);

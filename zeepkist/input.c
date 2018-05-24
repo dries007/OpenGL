@@ -82,7 +82,7 @@ void keyboard(unsigned char key, int x, int y)
             break;
 
         /* Shininess */
-        case 'r': SETTINGS.shininess += ((modifiers & GLUT_ACTIVE_SHIFT) ? -.5 : .5); break;
+        case 'r': SETTINGS.shininess += ((modifiers & GLUT_ACTIVE_SHIFT) ? -5 : 5); break;
 
         /* Add/Remove cars */
         case 't':
