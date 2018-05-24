@@ -221,15 +221,15 @@ void draw_road(size_t lanes, uint banner_texture)
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, banner_texture);
         glBegin(GL_QUADS);
-        glTexCoord2i(1, 0); glVertex3d(-LANE_WIDTH/2.0+0.01,   0, 0);
-        glTexCoord2i(0, 0); glVertex3d(-LANE_WIDTH/2.0+0.01,   0, ROAD_LENGHT);
-        glTexCoord2i(0, 1); glVertex3d(-LANE_WIDTH/2.0+0.01, 2.5, ROAD_LENGHT);
-        glTexCoord2i(1, 1); glVertex3d(-LANE_WIDTH/2.0+0.01, 2.5, 0);
+        glTexCoord2i(1, 0); glVertex3d(-LANE_WIDTH/2.0+0.1,   0, 0);
+        glTexCoord2i(0, 0); glVertex3d(-LANE_WIDTH/2.0+0.1,   0, ROAD_LENGHT);
+        glTexCoord2i(0, 1); glVertex3d(-LANE_WIDTH/2.0+0.1, 2.5, ROAD_LENGHT);
+        glTexCoord2i(1, 1); glVertex3d(-LANE_WIDTH/2.0+0.1, 2.5, 0);
 
-        glTexCoord2i(0, 0); glVertex3d(lanes*LANE_WIDTH-LANE_WIDTH/2.0-0.01,   0, 0);
-        glTexCoord2i(1, 0); glVertex3d(lanes*LANE_WIDTH-LANE_WIDTH/2.0-0.01,   0, ROAD_LENGHT);
-        glTexCoord2i(1, 1); glVertex3d(lanes*LANE_WIDTH-LANE_WIDTH/2.0-0.01, 2.5, ROAD_LENGHT);
-        glTexCoord2i(0, 1); glVertex3d(lanes*LANE_WIDTH-LANE_WIDTH/2.0-0.01, 2.5, 0);
+        glTexCoord2i(0, 0); glVertex3d(lanes*LANE_WIDTH-LANE_WIDTH/2.0-0.1,   0, 0);
+        glTexCoord2i(1, 0); glVertex3d(lanes*LANE_WIDTH-LANE_WIDTH/2.0-0.1,   0, ROAD_LENGHT);
+        glTexCoord2i(1, 1); glVertex3d(lanes*LANE_WIDTH-LANE_WIDTH/2.0-0.1, 2.5, ROAD_LENGHT);
+        glTexCoord2i(0, 1); glVertex3d(lanes*LANE_WIDTH-LANE_WIDTH/2.0-0.1, 2.5, 0);
         glEnd();
         glDisable(GL_TEXTURE_2D);
 
@@ -476,7 +476,7 @@ void draw_model(Car* car)
 
     glDisable(GL_COLOR_MATERIAL);
 
-    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0.6);
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 76.8);
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, (float *) &colorAmbient);
     glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, (float *) &colorDiffuse);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, (float *) &colorSpecular);
@@ -521,7 +521,7 @@ void draw_lamp(GLenum id)
     }
     float data[4];
     glGetLightfv(id, type, data);
-    data[4] = 1.0;
+    data[3] = 1.0;
     glColor3fv(data);
     if (glIsEnabled(id)) glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, data);
     if (SETTINGS.debug) glutWireSphere(1, 16, 8); else glutSolidSphere(1, 16, 8);

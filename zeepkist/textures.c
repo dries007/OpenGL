@@ -44,6 +44,8 @@ uint textures_load(const char *filename)
     width = (unsigned int) header[0x12] | (header[0x12+1] << 8) | (header[0x12+2] << 16) | (header[0x12+3] << 24);
     height = (unsigned int) header[0x16] | (header[0x16+1] << 8) | (header[0x16+2] << 16) | (header[0x16+3] << 24);
 
+	printf("Texture WxH: %dx%d\n", width, height);
+
     /* Some BMP files are misformatted, guess missing information */
     if (imageSize==0)    imageSize=width*height*3; /* 3 : one byte for each Red, Green and Blue component */
     if (dataPos==0)      dataPos=54; /* The BMP header is done that way */
